@@ -1,3 +1,10 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Added 'image' to ArtifactKind + ArtifactRendererId so the shared
+// contracts package agrees with apps/web/src/artifacts/types.ts after
+// the Phase E3.2 image-renderer addition. Keeping both definitions in
+// sync because ProjectFile.artifactManifest types through contracts.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import type { JsonValue } from '../common.js';
 
 export type ArtifactKind =
@@ -6,6 +13,7 @@ export type ArtifactKind =
   | 'react-component'
   | 'markdown-document'
   | 'svg'
+  | 'image'
   | 'diagram'
   | 'code-snippet'
   | 'mini-app'
@@ -17,6 +25,7 @@ export type ArtifactRendererId =
   | 'react-component'
   | 'markdown'
   | 'svg'
+  | 'image'
   | 'diagram'
   | 'code'
   | 'mini-app'

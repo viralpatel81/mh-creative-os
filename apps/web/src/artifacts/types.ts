@@ -1,9 +1,16 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Added 'image' to ArtifactKind + ArtifactRendererId so the engine-
+// emitted <artifact type="image/png" src="..."> blocks (Phase E3.2)
+// can flow through the existing renderer registry.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 export type ArtifactKind =
   | 'html'
   | 'deck'
   | 'react-component'
   | 'markdown-document'
   | 'svg'
+  | 'image'
   | 'diagram'
   | 'code-snippet'
   | 'mini-app'
@@ -15,6 +22,7 @@ export type ArtifactRendererId =
   | 'react-component'
   | 'markdown'
   | 'svg'
+  | 'image'
   | 'diagram'
   | 'code'
   | 'mini-app'

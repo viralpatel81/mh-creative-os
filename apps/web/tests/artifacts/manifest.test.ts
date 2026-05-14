@@ -1,3 +1,10 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Image extensions (.png, .jpg, .jpeg, .gif, .webp) now infer to an
+// image manifest (Phase E3.2). Updated the "non-artifact" assertion
+// to use a genuinely unknown extension and added explicit image-
+// inference coverage.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -72,8 +79,18 @@ describe('inferLegacyManifest', () => {
   });
 
   it('returns null for non-artifact file types', () => {
-    expect(inferLegacyManifest({ entry: 'photo.png' })).toBeNull();
     expect(inferLegacyManifest({ entry: 'archive.bin' })).toBeNull();
+    expect(inferLegacyManifest({ entry: 'data.parquet' })).toBeNull();
+  });
+
+  it('infers image manifests for raster image files', () => {
+    for (const entry of ['photo.png', 'shot.jpg', 'frame.jpeg', 'sticker.gif', 'cover.webp']) {
+      expect(inferLegacyManifest({ entry })).toMatchObject({
+        kind: 'image',
+        renderer: 'image',
+        exports: ['zip'],
+      });
+    }
   });
 
   it('infers React component artifacts from JSX and TSX entries', () => {

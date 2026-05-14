@@ -1,3 +1,10 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// artifact:start now also carries the parsed `src` attribute so an
+// engine-emitted image artifact like <artifact type="image/png"
+// src="state/artifacts/run_X/ad.png" /> can surface its source path
+// to renderers without a separate body-content channel.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 /**
  * Streaming parser for <artifact identifier="..." type="..." title="...">...</artifact>
  * tags. Simplified from packages/artifacts/src/parser.ts in the reference
@@ -10,7 +17,14 @@
 
 export type ArtifactEvent =
   | { type: 'text'; delta: string }
-  | { type: 'artifact:start'; identifier: string; artifactType: string; title: string }
+  | {
+      type: 'artifact:start'
+      identifier: string
+      artifactType: string
+      title: string
+      /** Optional src attribute (image artifacts emit a path-only tag). */
+      src?: string
+    }
   | { type: 'artifact:chunk'; identifier: string; delta: string }
   | { type: 'artifact:end'; identifier: string; fullContent: string };
 
@@ -23,6 +37,7 @@ interface ParserState {
   identifier: string;
   artifactType: string;
   title: string;
+  src: string;
   content: string;
 }
 
@@ -165,6 +180,7 @@ export function createArtifactParser() {
     identifier: '',
     artifactType: '',
     title: '',
+    src: '',
     content: '',
   };
 
@@ -189,19 +205,39 @@ export function createArtifactParser() {
         if (open.start > 0) {
           yield { type: 'text', delta: state.buffer.slice(0, open.start) };
         }
-        const attrs = parseAttrs(open.attrs);
-        state.inside = true;
+        // Detect self-closing form: <artifact ... /> with no body.
+        // The engine's image artifacts (Phase E3.2) emit this shape
+        // because the image source travels via the src= attribute,
+        // not via inner content.
+        const rawAttrs = open.attrs;
+        const trimmed = rawAttrs.trimEnd();
+        const selfClosing = trimmed.endsWith('/');
+        const attrSource = selfClosing ? trimmed.slice(0, -1) : rawAttrs;
+        const attrs = parseAttrs(attrSource);
         state.identifier = attrs['identifier'] ?? '';
         state.artifactType = attrs['type'] ?? '';
         state.title = attrs['title'] ?? '';
+        state.src = attrs['src'] ?? '';
         state.content = '';
         state.buffer = state.buffer.slice(open.end);
-        yield {
+        const startEvent: ArtifactEvent = {
           type: 'artifact:start',
           identifier: state.identifier,
           artifactType: state.artifactType,
           title: state.title,
+          ...(state.src ? { src: state.src } : {}),
         };
+        yield startEvent;
+        if (selfClosing) {
+          yield { type: 'artifact:end', identifier: state.identifier, fullContent: '' };
+          state.inside = false;
+          state.identifier = '';
+          state.artifactType = '';
+          state.title = '';
+          state.src = '';
+        } else {
+          state.inside = true;
+        }
         continue;
       }
 
@@ -228,6 +264,7 @@ export function createArtifactParser() {
       state.identifier = '';
       state.artifactType = '';
       state.title = '';
+      state.src = '';
       state.content = '';
     }
   }

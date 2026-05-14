@@ -1,3 +1,9 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Added 'image' to allowed kinds + renderers and taught
+// inferKindFromEntry / exportsForKind about raster image extensions
+// (png/jpg/jpeg/gif/webp). Required by Phase E3.2 image renderer.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import type {
   ArtifactExportKind,
   ArtifactKind,
@@ -13,6 +19,7 @@ const ALLOWED_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'react-component',
   'markdown-document',
   'svg',
+  'image',
   'diagram',
   'code-snippet',
   'mini-app',
@@ -24,6 +31,7 @@ const ALLOWED_RENDERERS: ReadonlySet<ArtifactRendererId> = new Set([
   'react-component',
   'markdown',
   'svg',
+  'image',
   'diagram',
   'code',
   'mini-app',
@@ -50,6 +58,7 @@ function inferKindFromEntry(entry: string): ArtifactKind | null {
   const ext = normalizeExt(entry);
   if (['.html', '.htm'].includes(ext)) return 'html';
   if (ext === '.svg') return 'svg';
+  if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) return 'image';
   if (ext === '.md') return 'markdown-document';
   if (['.jsx', '.tsx'].includes(ext)) return 'react-component';
   if (['.js', '.ts', '.json', '.css'].includes(ext)) return 'code-snippet';
@@ -61,6 +70,10 @@ function exportsForKind(kind: ArtifactKind): ArtifactExportKind[] {
   if (kind === 'react-component') return ['jsx', 'html', 'zip'];
   if (kind === 'markdown-document') return ['md', 'html', 'pdf', 'zip'];
   if (kind === 'svg' || kind === 'diagram') return ['svg', 'zip'];
+  // Image artifacts: only zip-bundle export today. The PNG itself is
+  // served by the daemon's static-artifact route; the export list
+  // exists for the "download bundle" UI affordance.
+  if (kind === 'image') return ['zip'];
   if (kind === 'code-snippet') return ['txt', 'zip'];
   return ['html', 'pdf', 'zip'];
 }

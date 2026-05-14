@@ -1,3 +1,11 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Added ImageRenderer (Phase E3.2) so engine-emitted image artifacts
+// — <artifact type="image/png" src="..."> — resolve to the existing
+// image viewer path. Registered after ReactComponentRenderer + before
+// the deck/html renderers so an explicit image manifest wins over a
+// fallback inferred html match.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import { inferLegacyManifest } from './manifest';
 import { renderMarkdownToSafeHtml } from './markdown';
 import type { ArtifactManifest, ArtifactRendererId } from './types';
@@ -87,6 +95,29 @@ export const SvgRenderer: ArtifactRenderer = {
   },
 };
 
+export const ImageRenderer: ArtifactRenderer = {
+  id: 'image',
+  supportsStreaming: false,
+  canRender: ({ file }) => {
+    const manifest = resolveManifest(file);
+    if (!manifest) return false;
+    // Explicit image manifest wins.
+    if (manifest.renderer === 'image' || manifest.kind === 'image') return true;
+    // Manifest carries an artifact-tag-derived `type` (e.g. "image/png")
+    // when the producer was the streaming parser — match the MIME-family
+    // prefix so any raster image type slots into this renderer.
+    const tagType =
+      typeof manifest.metadata?.artifactType === 'string'
+        ? (manifest.metadata.artifactType as string)
+        : '';
+    if (tagType.startsWith('image/') && !tagType.includes('svg')) return true;
+    // Filesystem fallback: a project file with a raster image extension
+    // and no other manifest match. SVG is intentionally NOT routed here
+    // — it has its own renderer with inline DOM rendering.
+    return file.kind === 'image' && !/\.svg$/i.test(file.name);
+  },
+};
+
 export class RendererRegistry {
   constructor(private readonly renderers: ArtifactRenderer[]) {}
 
@@ -101,6 +132,7 @@ export class RendererRegistry {
 
 export const artifactRendererRegistry = new RendererRegistry([
   ReactComponentRenderer,
+  ImageRenderer,
   DeckHtmlRenderer,
   HtmlRenderer,
   MarkdownRenderer,
