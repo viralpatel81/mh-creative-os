@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "popup_request.v1.json",
+  "title": "PopupRequestV1",
+  "description": "Input contract for the engine's popup.design workflow. PopupPurpose covers the standard mh2 popup taxonomy; aspect ratios are square-to-portrait.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["brand_id", "aspects", "engine", "purpose"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "popup_request.v1" },
+    "brand_id": { "type": "string", "minLength": 1 },
+    "brief_text": { "type": "string" },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "email-capture",
+        "discount-offer",
+        "free-shipping",
+        "spin-to-win",
+        "exit-intent",
+        "announcement",
+        "preference-quiz",
+        "cart-recovery",
+        "custom"
+      ]
+    },
+    "aspects": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["1:1", "4:5", "3:4"] }
+    },
+    "engine": { "type": "string", "enum": ["gemini", "openai"] },
+    "vault_refs": { "type": "array", "items": { "type": "string" } },
+    "asset_ids": { "type": "array", "items": { "type": "string" } },
+    "quantity": { "type": "integer", "minimum": 1, "default": 1 },
+    "custom_description": { "type": "string" }
+  }
+}

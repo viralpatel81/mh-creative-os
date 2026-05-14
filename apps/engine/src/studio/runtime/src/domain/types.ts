@@ -1,4 +1,12 @@
-export const WORKFLOW_NAMES = ['social.post', 'blog.post', 'outreach.touch', 'respond.reply'] as const
+export const WORKFLOW_NAMES = [
+  'social.post',
+  'blog.post',
+  'outreach.touch',
+  'respond.reply',
+  'ad.post',
+  'email.design',
+  'popup.design',
+] as const
 export type WorkflowName = typeof WORKFLOW_NAMES[number]
 
 export const SOCIAL_PLATFORMS = ['twitter', 'linkedin', 'facebook', 'instagram', 'threads'] as const
@@ -25,6 +33,9 @@ export type ArtifactType =
   | 'article_draft'
   | 'approval'
   | 'delivery'
+  | 'ad_output'
+  | 'email_output'
+  | 'popup_output'
 
 export const STEP_NAMES = [
   'signal',

@@ -56,6 +56,14 @@ export const WORKFLOWS: Record<WorkflowName, StepDefinition[]> = {
     { name: 'brief', run: buildBriefArtifacts },
     { name: 'draft', run: buildResponseDraftArtifacts },
   ],
+  // Phase C stubs — real pipelines land in Phase D (port mh2 services/*).
+  // Each stub emits a single placeholder artifact matching its
+  // run_result.v1.extensions schema so daemon integration in Phase E
+  // can exercise the SSE/artifact path before real generation logic
+  // ships.
+  'ad.post': [{ name: 'render', run: buildAdStubArtifacts }],
+  'email.design': [{ name: 'render', run: buildEmailStubArtifacts }],
+  'popup.design': [{ name: 'render', run: buildPopupStubArtifacts }],
 }
 
 /**
@@ -75,11 +83,23 @@ export function resolveFormat(brand: BrandFoundation, input: Record<string, unkn
   return 'standard'
 }
 
-export function workflowChannel(workflow: WorkflowName): 'social' | 'blog' | 'outreach' | 'respond' {
+export type WorkflowChannel =
+  | 'social'
+  | 'blog'
+  | 'outreach'
+  | 'respond'
+  | 'ad'
+  | 'email'
+  | 'popup'
+
+export function workflowChannel(workflow: WorkflowName): WorkflowChannel {
   if (workflow === 'social.post') return 'social'
   if (workflow === 'blog.post') return 'blog'
   if (workflow === 'outreach.touch') return 'outreach'
-  return 'respond'
+  if (workflow === 'respond.reply') return 'respond'
+  if (workflow === 'ad.post') return 'ad'
+  if (workflow === 'email.design') return 'email'
+  return 'popup'
 }
 
 export function selectStepIndex(workflow: WorkflowName, fromStep?: StepName): number {
@@ -196,7 +216,11 @@ async function buildBriefArtifacts(context: WorkflowContext): Promise<StepOutput
     ]
   }
 
-  const channel = workflowChannel(context.workflow)
+  // This builder is registered only for the legacy organic workflows
+  // (social/blog/outreach/respond) so the channel is always one of those
+  // four — the cast keeps TS happy now that WorkflowChannel also covers
+  // the new ad/email/popup stubs which have their own builders.
+  const channel = workflowChannel(context.workflow) as 'social' | 'blog' | 'outreach' | 'respond'
   const primaryAudience = context.brand.audiences[0]?.id ?? 'general'
   const requestedPillarId = typeof context.input.pillar === 'string' ? context.input.pillar : undefined
   const selectedPillar = requestedPillarId
@@ -431,3 +455,85 @@ async function buildArticleDraftArtifacts(context: WorkflowContext): Promise<Ste
   ]
 }
 
+
+// ---------------------------------------------------------------------------
+// Phase C stubs for ad.post / email.design / popup.design.
+//
+// Each stub emits a single artifact with an `*_output` payload matching
+// the shape declared in packages/protocols/schemas/run_result.v1.extensions.json
+// so daemon-side parsing in Phase E can rely on the contract before the
+// real generation pipelines (Phase D — ported from mh2 services/) land.
+// ---------------------------------------------------------------------------
+
+function deriveAspects<T extends string>(input: Record<string, unknown>, fallback: T[]): T[] {
+  const raw = input.aspects
+  if (Array.isArray(raw) && raw.every((v) => typeof v === 'string')) {
+    return raw as T[]
+  }
+  return fallback
+}
+
+function deriveEngine(input: Record<string, unknown>): 'gemini' | 'openai' {
+  return input.engine === 'openai' ? 'openai' : 'gemini'
+}
+
+async function buildAdStubArtifacts(context: WorkflowContext): Promise<StepOutput[]> {
+  const aspects = deriveAspects<'1:1' | '3:4' | '9:16'>(context.input, ['1:1'])
+  const engine = deriveEngine(context.input)
+  return [
+    {
+      type: 'ad_output',
+      data: {
+        stub: true,
+        brand: context.brand.id,
+        images: aspects.map((aspect) => ({
+          aspect,
+          path: `state/artifacts/${context.runId}/stub-ad-${aspect.replace(':', 'x')}.png`,
+          engine,
+        })),
+      },
+    },
+  ]
+}
+
+async function buildEmailStubArtifacts(context: WorkflowContext): Promise<StepOutput[]> {
+  const aspects = deriveAspects<'2:3' | '3:4' | '9:16'>(context.input, ['3:4'])
+  const engine = deriveEngine(context.input)
+  const purpose = typeof context.input.purpose === 'string' ? context.input.purpose : 'custom'
+  return [
+    {
+      type: 'email_output',
+      data: {
+        stub: true,
+        brand: context.brand.id,
+        purpose,
+        images: aspects.map((aspect) => ({
+          aspect,
+          path: `state/artifacts/${context.runId}/stub-email-${aspect.replace(':', 'x')}.png`,
+          engine,
+        })),
+      },
+    },
+  ]
+}
+
+async function buildPopupStubArtifacts(context: WorkflowContext): Promise<StepOutput[]> {
+  const aspects = deriveAspects<'1:1' | '4:5' | '3:4'>(context.input, ['1:1'])
+  const engine = deriveEngine(context.input)
+  const purpose = typeof context.input.purpose === 'string' ? context.input.purpose : 'custom'
+  return [
+    {
+      type: 'popup_output',
+      data: {
+        stub: true,
+        brand: context.brand.id,
+        purpose,
+        images: aspects.map((aspect) => ({
+          aspect,
+          path: `state/artifacts/${context.runId}/stub-popup-${aspect.replace(':', 'x')}.png`,
+          engine,
+        })),
+      },
+    },
+  ]
+}

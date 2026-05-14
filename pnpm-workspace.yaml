@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - packages/brand-loader/ts
+  - packages/protocols/ts
   - apps/*
   - tools/*
   - e2e

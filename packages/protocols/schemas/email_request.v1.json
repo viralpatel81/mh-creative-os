@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "email_request.v1.json",
+  "title": "EmailRequestV1",
+  "description": "Input contract for the engine's email.design workflow. Email-specific fields: tall aspect ratios, an EmailPurpose enum, and optional vault refs / assets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["brand_id", "aspects", "engine", "purpose"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "email_request.v1" },
+    "brand_id": { "type": "string", "minLength": 1 },
+    "brief_text": { "type": "string" },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "welcome",
+        "abandoned-cart",
+        "win-back",
+        "promo",
+        "retention",
+        "announcement",
+        "transactional",
+        "custom"
+      ]
+    },
+    "aspects": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["2:3", "3:4", "9:16"] }
+    },
+    "engine": { "type": "string", "enum": ["gemini", "openai"] },
+    "layout_mode": { "type": "string", "enum": ["strategy", "template"], "default": "strategy" },
+    "vault_refs": { "type": "array", "items": { "type": "string" } },
+    "asset_ids": { "type": "array", "items": { "type": "string" } },
+    "quantity": { "type": "integer", "minimum": 1, "default": 1 },
+    "custom_description": { "type": "string" }
+  }
+}
