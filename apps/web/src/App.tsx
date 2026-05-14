@@ -1,3 +1,9 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Added a top-level branch for route.kind === 'brand' (Phase E3.3.b)
+// so /brands/:id renders the BrandEditor instead of the home/project
+// fallback. No other behavior changes.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAnalytics } from './analytics/provider';
 import { trackAppLaunch, trackProjectCreateResult } from './analytics/events';
@@ -6,6 +12,7 @@ import {
   projectKindToTracking,
   fidelityToTracking,
 } from '@open-design/contracts/analytics';
+import { BrandEditor } from './components/BrandEditor';
 import { EntryView } from './components/EntryView';
 import type { CreateInput } from './components/NewProjectPanel';
 import { MemoryToast } from './components/MemoryToast';
@@ -978,7 +985,9 @@ export function App() {
 
   return (
     <>
-      {activeProject ? (
+      {route.kind === 'brand' ? (
+        <BrandEditor brandId={route.brandId} />
+      ) : activeProject ? (
         <ProjectView
           key={activeProject.id}
           project={activeProject}

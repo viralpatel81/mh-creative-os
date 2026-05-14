@@ -1,3 +1,11 @@
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Inserted a <BrandsQuickLink/> strip below the top-tab row (Phase
+// E3.3.b) so available agentcy brands are discoverable from the
+// home view without changing the existing tab structure. The strip
+// renders nothing when no brands exist, so the upstream layout is
+// visually unchanged for users who haven't seeded a brand.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ConnectorDetail, ConnectorStatusResponse, ImportFolderResponse } from '@open-design/contracts';
 import { topTabToTracking } from '@open-design/contracts/analytics';
@@ -23,6 +31,7 @@ import type {
   PromptTemplateSummary,
   SkillSummary,
 } from '../types';
+import { BrandsQuickLink } from './BrandsQuickLink';
 import { DesignsTab } from './DesignsTab';
 import { DesignSystemPreviewModal } from './DesignSystemPreviewModal';
 import { DesignSystemsTab } from './DesignSystemsTab';
@@ -625,6 +634,7 @@ export function EntryView({
               onClick={setTopTab}
             />
           </div>
+          <BrandsQuickLink />
         </div>
         <div className="entry-tab-content">
           {topTab === 'designs' ? (
