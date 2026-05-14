@@ -5,12 +5,14 @@
 // restart anyway); when a daemon comes back up:
 //   - any `running` row whose pid is no longer alive is reaped to
 //     `failed` by recoverOrphanedRuns()
+//   - any `running` row whose pid IS alive + has a recorded log_path
+//     gets reattached: the daemon tails the JSONL log file and resumes
+//     forwarding events.
 //   - clients reconnecting to a still-active run can replay the event
-//     log via the `Last-Event-ID` SSE header
+//     log via the `Last-Event-ID` SSE header.
 //
-// Phase E2 done here: durable run + event log + recovery sweep + replay.
-// Phase E3 (deferred): detached subprocesses so the engine keeps
-// generating across daemon restarts.
+// Phase E3.1: detached subprocess + log-file tailer for live forwarding
+// + reattach across daemon restarts.
 
 import { createReadStream } from 'node:fs'
 import { randomUUID } from 'node:crypto'
@@ -23,15 +25,19 @@ import {
 } from '@mh/protocols'
 
 import { spawnAgentcy } from './spawn.js'
+import { tailRunLog, type RunningTailer } from './reattach.js'
 import { contentTypeFor, resolveArtifactPath, UnsafeArtifactPath } from './static.js'
 import {
   appendEvent,
+  appendEventDedupedByLineIndex,
   finishRun,
   getRun,
   insertRun,
+  listActiveRuns,
   migrateAgentcy,
   recoverOrphanedRuns,
   replayEvents,
+  setRunLogPath,
   setRunPid,
   type SqliteDb,
 } from './persistence.js'
@@ -55,12 +61,26 @@ interface LiveSubscriber {
   lastSentSeq: number
 }
 
+function defaultIsAlive(pid: number | null): boolean {
+  if (pid === null || pid === undefined || Number.isNaN(pid)) return false
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesOptions): void {
   migrateAgentcy(opts.db)
-  recoverOrphanedRuns(opts.db, opts.isAlive)
+  const isAlive = opts.isAlive ?? defaultIsAlive
+  recoverOrphanedRuns(opts.db, isAlive)
 
   // In-memory subscriber map; live SSE only, not a source of truth.
   const subscribers = new Map<string, Set<LiveSubscriber>>()
+  // In-memory tailer registry — one per active run. Used to surface
+  // tailer.done so the reattach test (and shutdown paths) can await it.
+  const tailers = new Map<string, RunningTailer>()
   const newRunId = opts.runIdGenerator ?? randomUUID
 
   function validateRequest(req: WorkflowRunRequest): void {
@@ -82,11 +102,6 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
     }
   }
 
-  function recordAndBroadcast(runId: string, event: AgentcyRuntimeEvent): void {
-    const { seq } = appendEvent(opts.db, runId, event)
-    fanOut(runId, { ...event, seq })
-  }
-
   function broadcastEnd(
     runId: string,
     status: 'succeeded' | 'failed' | 'canceled',
@@ -95,18 +110,81 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
   ): void {
     // The terminal `end` event is daemon-emitted and stored in the
     // event log so replay-after-terminal still ends gracefully.
-    recordAndBroadcast(runId, {
+    const event = {
       kind: 'end' as const,
       runId,
       status,
       exitCode,
       signal,
-    } as unknown as AgentcyRuntimeEvent)
+    } as unknown as AgentcyRuntimeEvent
+    const { seq } = appendEvent(opts.db, runId, event)
+    fanOut(runId, { ...event, seq })
     const set = subscribers.get(runId)
     if (set) {
       for (const sub of set) sub.res.end()
       subscribers.delete(runId)
     }
+  }
+
+  /**
+   * Start a tailer against a run's JSONL log file. New lines flow into
+   * the event log (dedup-keyed on line_index) and out to live SSE
+   * subscribers. Returns the tailer so callers can await it before
+   * finishing the run.
+   */
+  function startTailer(args: {
+    runId: string
+    logPath: string
+    isDone: () => boolean
+  }): RunningTailer {
+    const tailer = tailRunLog({
+      logPath: args.logPath,
+      isDone: args.isDone,
+      onEvent: (lineIndex, event) => {
+        const { seq, inserted } = appendEventDedupedByLineIndex(
+          opts.db,
+          args.runId,
+          lineIndex,
+          event,
+        )
+        if (inserted) fanOut(args.runId, { ...event, seq })
+      },
+    })
+    tailers.set(args.runId, tailer)
+    void tailer.done.finally(() => {
+      if (tailers.get(args.runId) === tailer) tailers.delete(args.runId)
+    })
+    return tailer
+  }
+
+  // Reattach any `running` rows whose pid IS alive (orphans were
+  // already swept). Each gets its own tailer rooted on the recorded
+  // log_path; when the pid eventually dies, the tailer drains and we
+  // finish the run with `failed` (we don't have an exit code from a
+  // subprocess we didn't spawn this lifetime).
+  for (const row of listActiveRuns(opts.db)) {
+    if (!row.logPath || !isAlive(row.pid)) continue
+    const recordedPid = row.pid
+    const tailer = startTailer({
+      runId: row.runId,
+      logPath: row.logPath,
+      isDone: () => !isAlive(recordedPid),
+    })
+    void tailer.done.then(() => {
+      // Pid died, tail drained. We don't know the exit code from a
+      // process we didn't spawn — record what we have.
+      const fresh = getRun(opts.db, row.runId)
+      if (!fresh || fresh.status !== 'running') return
+      finishRun(opts.db, {
+        runId: row.runId,
+        status: 'failed',
+        exitCode: null,
+        signal: null,
+        endedAt: Date.now(),
+        errorMessage: 'reattached_engine_exited',
+      })
+      broadcastEnd(row.runId, 'failed', null, null)
+    })
   }
 
   // POST /api/agentcy/runs/workflow — start a new workflow run.
@@ -154,24 +232,42 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
       startedAt,
     })
 
-    const { child, done } = spawnAgentcy({
+    const { child, logPath, done } = spawnAgentcy({
+      runId,
       workflow: request.workflow,
       brandId: request.brand_id,
       params: request.params,
       engine: opts.engine,
-      onEvent: (event) => recordAndBroadcast(runId, event),
       onStderr: (text) => {
-        recordAndBroadcast(runId, {
+        // stderr bypasses the log file + dedup index — it's a daemon-
+        // local annotation, not part of the canonical engine event
+        // stream. Use appendEvent (no line_index) so a daemon restart
+        // doesn't double-emit.
+        const trimmed = text.trim()
+        if (!trimmed) return
+        const event = {
           kind: 'log',
           runId,
           level: 'error',
-          message: text.trim(),
-        })
+          message: trimmed,
+        } as unknown as AgentcyRuntimeEvent
+        const { seq } = appendEvent(opts.db, runId, event)
+        fanOut(runId, { ...event, seq })
       },
     })
     setRunPid(opts.db, runId, child.pid ?? null)
+    setRunLogPath(opts.db, runId, logPath)
 
-    done.then(({ exitCode, signal }) => {
+    let exited = false
+    const tailer = startTailer({
+      runId,
+      logPath,
+      isDone: () => exited,
+    })
+
+    done.then(async ({ exitCode, signal }) => {
+      exited = true
+      await tailer.done
       const status = exitCode === 0 ? 'succeeded' : 'failed'
       finishRun(opts.db, {
         runId,

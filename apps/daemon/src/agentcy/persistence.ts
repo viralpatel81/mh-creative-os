@@ -3,12 +3,15 @@
 // Adds two tables to the existing daemon database (`.od/app.sqlite`):
 //
 //   agentcy_runs        run lifecycle (id, workflow, brand, status,
-//                       pid, exit code, start/end times, error)
+//                       pid, exit code, start/end times, error,
+//                       log_path)
 //
 //   agentcy_run_events  append-only JSON event log keyed by run_id.
 //                       Indexed on (run_id, seq) so SSE clients can
 //                       replay from a given seq (after a reconnect)
-//                       in linear time.
+//                       in linear time. line_index (E3.1) keys each
+//                       event to its position in the per-run JSONL
+//                       log file for tail-reattach dedup.
 //
 // We don't touch the upstream open-design db.ts migrate() function;
 // migrateAgentcy(db) is called by registerAgentcyRoutes once at daemon
@@ -32,6 +35,12 @@ export interface AgentcyRunRow {
   exitCode: number | null
   signal: string | null
   errorMessage: string | null
+  logPath: string | null
+}
+
+function hasColumn(db: SqliteDb, table: string, column: string): boolean {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+  return rows.some((r) => r.name === column)
 }
 
 export function migrateAgentcy(db: SqliteDb): void {
@@ -67,6 +76,23 @@ export function migrateAgentcy(db: SqliteDb): void {
     CREATE INDEX IF NOT EXISTS idx_agentcy_events_run
       ON agentcy_run_events(run_id, seq);
   `)
+
+  // E3.1: durable per-run log file path + line-indexed event dedup.
+  // We ADD COLUMN idempotently so a fresh DB and an already-migrated DB
+  // both end up with the same schema.
+  if (!hasColumn(db, 'agentcy_runs', 'log_path')) {
+    db.exec(`ALTER TABLE agentcy_runs ADD COLUMN log_path TEXT`)
+  }
+  if (!hasColumn(db, 'agentcy_run_events', 'line_index')) {
+    db.exec(`ALTER TABLE agentcy_run_events ADD COLUMN line_index INTEGER`)
+  }
+  // Partial unique index: only NEW (line-indexed) rows are uniqueness-
+  // checked. Legacy events with NULL line_index coexist freely.
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uniq_agentcy_events_run_line
+      ON agentcy_run_events(run_id, line_index)
+      WHERE line_index IS NOT NULL
+  `)
 }
 
 function rowToRun(row: Record<string, unknown>): AgentcyRunRow {
@@ -81,6 +107,7 @@ function rowToRun(row: Record<string, unknown>): AgentcyRunRow {
     exitCode: (row.exit_code as number | null) ?? null,
     signal: (row.signal as string | null) ?? null,
     errorMessage: (row.error_message as string | null) ?? null,
+    logPath: (row.log_path as string | null) ?? null,
   }
 }
 
@@ -96,6 +123,10 @@ export function insertRun(
 
 export function setRunPid(db: SqliteDb, runId: string, pid: number | null): void {
   db.prepare(`UPDATE agentcy_runs SET pid=? WHERE run_id=?`).run(pid, runId)
+}
+
+export function setRunLogPath(db: SqliteDb, runId: string, logPath: string | null): void {
+  db.prepare(`UPDATE agentcy_runs SET log_path=? WHERE run_id=?`).run(logPath, runId)
 }
 
 export function finishRun(
@@ -159,6 +190,46 @@ export function appendEvent(
     )
     .get(runId, runId, ts, event.kind, JSON.stringify(event)) as { seq: number }
   return result
+}
+
+/**
+ * E3.1 — Append an event keyed by its position in the per-run JSONL log
+ * file. If a row already exists for (run_id, line_index), no insert
+ * happens and the existing seq is returned. This lets the daemon re-tail
+ * the same log file across restarts and stay idempotent.
+ *
+ * Wrapped in a transaction so the SELECT-then-INSERT is atomic; better-
+ * sqlite3 is synchronous on a single connection but the daemon may
+ * still race the tailer's idle poll against a foreground HTTP write.
+ */
+export function appendEventDedupedByLineIndex(
+  db: SqliteDb,
+  runId: string,
+  lineIndex: number,
+  event: AgentcyRuntimeEvent,
+): { seq: number; inserted: boolean } {
+  return db.transaction(() => {
+    const existing = db
+      .prepare(`SELECT seq FROM agentcy_run_events WHERE run_id=? AND line_index=?`)
+      .get(runId, lineIndex) as { seq: number } | undefined
+    if (existing) return { seq: existing.seq, inserted: false }
+    const ts = Date.now()
+    const result = db
+      .prepare(
+        `INSERT INTO agentcy_run_events (run_id, seq, ts, kind, payload, line_index)
+         VALUES (
+           ?,
+           COALESCE((SELECT MAX(seq) FROM agentcy_run_events WHERE run_id = ?), 0) + 1,
+           ?,
+           ?,
+           ?,
+           ?
+         )
+         RETURNING seq`,
+      )
+      .get(runId, runId, ts, event.kind, JSON.stringify(event), lineIndex) as { seq: number }
+    return { seq: result.seq, inserted: true }
+  })()
 }
 
 export interface ReplayedEvent {
