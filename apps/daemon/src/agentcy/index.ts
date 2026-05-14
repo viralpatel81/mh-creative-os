@@ -26,4 +26,5 @@
 //     email.design / popup.design workflows.
 
 export { registerAgentcyRoutes } from './routes.js'
+export { registerAgentcyBrandRoutes } from './brand-routes.js'
 export type { WorkflowRunRequest, AgentcyRunStatus, AgentcyEngineLocation } from './types.js'

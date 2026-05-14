@@ -29,6 +29,9 @@ importers:
 
   apps/daemon:
     dependencies:
+      '@mh/brand-loader':
+        specifier: workspace:*
+        version: link:../../packages/brand-loader/ts
       '@mh/protocols':
         specifier: workspace:*
         version: link:../../packages/protocols/ts

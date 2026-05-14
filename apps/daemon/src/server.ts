@@ -1,4 +1,11 @@
 // @ts-nocheck
+// MODIFIED 2026-05-13 by mh-creative-os fork:
+// Mount the agentcy bridge (registerAgentcyRoutes) and agentcy brand
+// read endpoints (registerAgentcyBrandRoutes). See apps/daemon/src/
+// agentcy/{routes,brand-routes}.ts for the route definitions; this
+// file only wires them onto the existing express app.
+// Upstream: nexu-io/open-design @ 7c8305f4
+
 import type { DesktopExportPdfInput, DesktopExportPdfResult } from '@open-design/sidecar-proto';
 import express from 'express';
 import multer from 'multer';
@@ -247,7 +254,7 @@ import { registerActiveContextRoutes } from './active-context-routes.js';
 import { registerMcpRoutes } from './mcp-routes.js';
 import { registerLiveArtifactRoutes } from './live-artifact-routes.js';
 import { registerDeployRoutes, registerDeploymentCheckRoutes } from './deploy-routes.js';
-import { registerAgentcyRoutes } from './agentcy/index.js';
+import { registerAgentcyBrandRoutes, registerAgentcyRoutes } from './agentcy/index.js';
 import { registerMediaRoutes } from './media-routes.js';
 import { registerProjectRoutes, registerProjectArtifactRoutes, registerProjectFileRoutes, registerProjectUploadRoutes } from './project-routes.js';
 import { registerFinalizeRoutes, registerImportRoutes, registerProjectExportRoutes } from './import-export-routes.js';
@@ -3013,23 +3020,26 @@ export async function startServer({
   // Kept additive: open-design's chat-shaped run/SSE path is untouched.
   const agentcyRoot =
     process.env.OD_AGENTCY_ROOT ?? path.join(PROJECT_ROOT, 'apps', 'engine');
+  const agentcyEngineLocation = {
+    engineRoot: agentcyRoot,
+    artifactsDir: path.join(agentcyRoot, 'state', 'artifacts'),
+    // Spawn the engine via pnpm exec tsx; mirrors how the existing
+    // smoke-test scripts and engine vitest invoke it during dev. A
+    // packaged-binary path (e.g., `agentcy` on PATH) becomes
+    // configurable in Phase E3 alongside subprocess detachment.
+    cliCommand: 'pnpm',
+    cliBaseArgs: ['exec', 'tsx', 'src/cli.ts'],
+  } as const;
   registerAgentcyRoutes(app, {
-    engine: {
-      engineRoot: agentcyRoot,
-      artifactsDir: path.join(agentcyRoot, 'state', 'artifacts'),
-      // Spawn the engine via pnpm exec tsx; mirrors how the existing
-      // smoke-test scripts and engine vitest invoke it during dev. A
-      // packaged-binary path (e.g., `agentcy` on PATH) becomes
-      // configurable in Phase E3 alongside subprocess detachment.
-      cliCommand: 'pnpm',
-      cliBaseArgs: ['exec', 'tsx', 'src/cli.ts'],
-    },
+    engine: agentcyEngineLocation,
     // Reuse the daemon's existing app.sqlite handle so the agentcy_runs
     // + agentcy_run_events tables live alongside projects/conversations/
     // messages. migrateAgentcy(db) idempotently creates them on first
     // call. Recovery sweep runs immediately after migration.
     db,
   });
+  // E3.3.a — brand-profile read endpoints backed by @mh/brand-loader.
+  registerAgentcyBrandRoutes(app, { engine: agentcyEngineLocation });
 
   registerDeployRoutes(app, {
     db,
