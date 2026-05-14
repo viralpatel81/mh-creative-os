@@ -469,6 +469,15 @@ export class Runtime {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(artifactId, runId, type, step, path, createdAt, JSON.stringify(data))
 
+    this.eventSink.emit({
+      kind: 'artifact.written',
+      runId,
+      type,
+      path,
+      identifier: typeof data?.identifier === 'string' ? data.identifier : undefined,
+      title: typeof data?.title === 'string' ? data.title : undefined,
+    })
+
     return {
       id: artifactId,
       runId,

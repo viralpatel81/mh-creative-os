@@ -62,4 +62,28 @@ describe('Runtime event emission', () => {
       }
     }
   })
+
+  test('emits artifact.written for every persisted artifact during a run', async () => {
+    const root = createWorkspace()
+    suppressImageApiKeys()
+    const recorder = new EventRecorder()
+    const runtime = createRuntime({ root, eventSink: recorder })
+
+    const run = await runtime.runWorkflow({
+      workflow: 'social.post',
+      brand: 'givecare',
+      input: { topic: 'artifact-event-test' },
+      autoApprove: true,
+    })
+
+    const artifactEvents = recorder.events.filter((e) => e.kind === 'artifact.written')
+    expect(artifactEvents.length).toBeGreaterThan(0)
+    for (const e of artifactEvents) {
+      if (e.kind === 'artifact.written') {
+        expect(e.runId).toBe(run.id)
+        expect(e.type).toBeTruthy()
+        expect(e.path).toBeTruthy()
+      }
+    }
+  })
 })
