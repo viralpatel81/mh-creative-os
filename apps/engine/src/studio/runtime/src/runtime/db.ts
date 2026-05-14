@@ -49,6 +49,21 @@ export function openRuntimeDb(root?: string): DatabaseSync {
       created_at TEXT NOT NULL,
       data_json TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS artifact_outbox (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      step TEXT NOT NULL,
+      staging_path TEXT NOT NULL,
+      final_path TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('pending','committed','failed')),
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_outbox_pending
+      ON artifact_outbox(status) WHERE status = 'pending';
   `)
 
   // Forward-compatible ALTER for DBs created before these columns existed.

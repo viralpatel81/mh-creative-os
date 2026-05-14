@@ -67,4 +67,30 @@ describe('openRuntimeDb', () => {
       rmSync(root, { recursive: true, force: true })
     }
   })
+
+  it('creates artifact_outbox table with expected columns', () => {
+    const root = mkdtempSync(join(tmpdir(), 'mh-runtime-outbox-'))
+    try {
+      const db = openRuntimeDb(root)
+      const cols = (
+        db.prepare('PRAGMA table_info(artifact_outbox)').all() as Array<{ name: string }>
+      ).map((c) => c.name)
+      expect(cols).toEqual(
+        expect.arrayContaining([
+          'id',
+          'run_id',
+          'type',
+          'step',
+          'staging_path',
+          'final_path',
+          'data_json',
+          'status',
+          'created_at',
+        ]),
+      )
+      db.close()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
 })
