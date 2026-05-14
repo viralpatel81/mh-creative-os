@@ -1,10 +1,16 @@
-// Express routes for the agentcy bridge. Self-contained — call
-// registerAgentcyRoutes(app, opts) once during daemon startup.
+// Express routes for the agentcy bridge.
 //
-// Run state is in-memory for Phase E first cut (durable runs table is
-// Phase E2). On daemon restart, runs in flight are abandoned; the
-// engine subprocess itself is *not* detached, so it will be torn down
-// when the daemon exits.
+// Run state persists to the daemon's SQLite database via persistence.ts.
+// Live SSE clients are tracked in-memory (they can't survive a daemon
+// restart anyway); when a daemon comes back up:
+//   - any `running` row whose pid is no longer alive is reaped to
+//     `failed` by recoverOrphanedRuns()
+//   - clients reconnecting to a still-active run can replay the event
+//     log via the `Last-Event-ID` SSE header
+//
+// Phase E2 done here: durable run + event log + recovery sweep + replay.
+// Phase E3 (deferred): detached subprocesses so the engine keeps
+// generating across daemon restarts.
 
 import { createReadStream } from 'node:fs'
 import { randomUUID } from 'node:crypto'
@@ -18,34 +24,43 @@ import {
 
 import { spawnAgentcy } from './spawn.js'
 import { contentTypeFor, resolveArtifactPath, UnsafeArtifactPath } from './static.js'
+import {
+  appendEvent,
+  finishRun,
+  getRun,
+  insertRun,
+  migrateAgentcy,
+  recoverOrphanedRuns,
+  replayEvents,
+  setRunPid,
+  type SqliteDb,
+} from './persistence.js'
 import type {
   AgentcyEngineLocation,
-  AgentcyRunStatus,
   AgentcyRuntimeEvent,
   WorkflowRunRequest,
 } from './types.js'
 
-interface RunRecord {
-  runId: string
-  workflow: WorkflowRunRequest['workflow']
-  brandId: string
-  status: AgentcyRunStatus
-  exitCode: number | null
-  signal: NodeJS.Signals | null
-  startedAt: number
-  events: AgentcyRuntimeEvent[]
-  /** Open SSE response objects subscribed to this run. */
-  subscribers: Set<Response>
-}
-
 export interface RegisterAgentcyRoutesOptions {
   engine: AgentcyEngineLocation
+  db: SqliteDb
   /** Override for tests; defaults to randomUUID. */
   runIdGenerator?: () => string
+  /** Override pid-liveness check for tests. */
+  isAlive?: (pid: number | null) => boolean
+}
+
+interface LiveSubscriber {
+  res: Response
+  lastSentSeq: number
 }
 
 export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesOptions): void {
-  const runs = new Map<string, RunRecord>()
+  migrateAgentcy(opts.db)
+  recoverOrphanedRuns(opts.db, opts.isAlive)
+
+  // In-memory subscriber map; live SSE only, not a source of truth.
+  const subscribers = new Map<string, Set<LiveSubscriber>>()
   const newRunId = opts.runIdGenerator ?? randomUUID
 
   function validateRequest(req: WorkflowRunRequest): void {
@@ -56,10 +71,41 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
     else throw new ProtocolValidationError(`unknown workflow: ${req.workflow}`, '')
   }
 
-  function broadcast(run: RunRecord, event: AgentcyRuntimeEvent | { kind: 'end'; [k: string]: unknown }): void {
-    const payload = JSON.stringify(event)
-    for (const sse of run.subscribers) {
-      sse.write(`event: ${event.kind}\ndata: ${payload}\n\n`)
+  function fanOut(runId: string, payload: { seq?: number; kind: string; [k: string]: unknown }): void {
+    const set = subscribers.get(runId)
+    if (!set || set.size === 0) return
+    const serialized = JSON.stringify(payload)
+    for (const sub of set) {
+      const seqPrefix = typeof payload.seq === 'number' ? `id: ${payload.seq}\n` : ''
+      sub.res.write(`${seqPrefix}event: ${payload.kind}\ndata: ${serialized}\n\n`)
+      if (typeof payload.seq === 'number') sub.lastSentSeq = payload.seq
+    }
+  }
+
+  function recordAndBroadcast(runId: string, event: AgentcyRuntimeEvent): void {
+    const { seq } = appendEvent(opts.db, runId, event)
+    fanOut(runId, { ...event, seq })
+  }
+
+  function broadcastEnd(
+    runId: string,
+    status: 'succeeded' | 'failed' | 'canceled',
+    exitCode: number | null,
+    signal: NodeJS.Signals | null,
+  ): void {
+    // The terminal `end` event is daemon-emitted and stored in the
+    // event log so replay-after-terminal still ends gracefully.
+    recordAndBroadcast(runId, {
+      kind: 'end' as const,
+      runId,
+      status,
+      exitCode,
+      signal,
+    } as unknown as AgentcyRuntimeEvent)
+    const set = subscribers.get(runId)
+    if (set) {
+      for (const sub of set) sub.res.end()
+      subscribers.delete(runId)
     }
   }
 
@@ -100,47 +146,41 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
     }
 
     const runId = newRunId()
-    const record: RunRecord = {
+    const startedAt = Date.now()
+    insertRun(opts.db, {
       runId,
       workflow: request.workflow,
       brandId: request.brand_id,
-      status: 'running',
-      exitCode: null,
-      signal: null,
-      startedAt: Date.now(),
-      events: [],
-      subscribers: new Set(),
-    }
-    runs.set(runId, record)
+      startedAt,
+    })
 
-    const { done } = spawnAgentcy({
+    const { child, done } = spawnAgentcy({
       workflow: request.workflow,
       brandId: request.brand_id,
       params: request.params,
       engine: opts.engine,
-      onEvent: (event) => {
-        record.events.push(event)
-        broadcast(record, event)
-      },
+      onEvent: (event) => recordAndBroadcast(runId, event),
       onStderr: (text) => {
-        const logEvent: AgentcyRuntimeEvent = {
+        recordAndBroadcast(runId, {
           kind: 'log',
           runId,
           level: 'error',
           message: text.trim(),
-        }
-        record.events.push(logEvent)
-        broadcast(record, logEvent)
+        })
       },
     })
+    setRunPid(opts.db, runId, child.pid ?? null)
 
     done.then(({ exitCode, signal }) => {
-      record.exitCode = exitCode
-      record.signal = signal
-      record.status = exitCode === 0 ? 'succeeded' : 'failed'
-      broadcast(record, { kind: 'end', runId, status: record.status, exitCode, signal })
-      for (const sse of record.subscribers) sse.end()
-      record.subscribers.clear()
+      const status = exitCode === 0 ? 'succeeded' : 'failed'
+      finishRun(opts.db, {
+        runId,
+        status,
+        exitCode,
+        signal,
+        endedAt: Date.now(),
+      })
+      broadcastEnd(runId, status, exitCode, signal)
     })
 
     res.status(202).json({ runId, workflow: request.workflow, brandId: request.brand_id })
@@ -153,7 +193,7 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
       res.status(400).json({ error: 'missing runId' })
       return
     }
-    const run = runs.get(runId)
+    const run = getRun(opts.db, runId)
     if (!run) {
       res.status(404).json({ error: 'run not found' })
       return
@@ -165,50 +205,61 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
       status: run.status,
       exitCode: run.exitCode,
       signal: run.signal,
+      pid: run.pid,
       startedAt: run.startedAt,
-      eventCount: run.events.length,
+      endedAt: run.endedAt,
+      errorMessage: run.errorMessage,
     })
   })
 
-  // GET /api/agentcy/runs/:runId/events — SSE stream of RuntimeEvents.
+  // GET /api/agentcy/runs/:runId/events — SSE stream with replay.
   app.get('/api/agentcy/runs/:runId/events', (req: Request, res: Response) => {
     const runId = (req.params as Record<string, string | undefined>).runId
     if (!runId) {
       res.status(400).json({ error: 'missing runId' })
       return
     }
-    const run = runs.get(runId)
+    const run = getRun(opts.db, runId)
     if (!run) {
       res.status(404).json({ error: 'run not found' })
       return
     }
+
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache, no-transform')
     res.setHeader('Connection', 'keep-alive')
     res.flushHeaders?.()
 
-    // Replay buffered events for late subscribers (and one-shot clients
-    // that connect after a terminal status).
-    for (const ev of run.events) {
-      res.write(`event: ${ev.kind}\ndata: ${JSON.stringify(ev)}\n\n`)
+    // Last-Event-ID supports SSE reconnect — the client sends the seq
+    // of the last event it saw; we replay every event after that.
+    const lastEventHeader = req.get('Last-Event-ID') ?? (req.query.after as string | undefined)
+    const lastSeq = lastEventHeader ? Number(lastEventHeader) : 0
+    const afterSeq = Number.isFinite(lastSeq) && lastSeq > 0 ? lastSeq : 0
+
+    const replay = replayEvents(opts.db, runId, afterSeq)
+    let maxSeqSent = afterSeq
+    for (const r of replay) {
+      const payload = JSON.stringify({ ...r.payload, seq: r.seq })
+      res.write(`id: ${r.seq}\nevent: ${r.kind}\ndata: ${payload}\n\n`)
+      maxSeqSent = r.seq
     }
+
     if (run.status === 'succeeded' || run.status === 'failed' || run.status === 'canceled') {
-      res.write(
-        `event: end\ndata: ${JSON.stringify({
-          kind: 'end',
-          runId: run.runId,
-          status: run.status,
-          exitCode: run.exitCode,
-          signal: run.signal,
-        })}\n\n`,
-      )
       res.end()
       return
     }
 
-    run.subscribers.add(res)
+    // Active run — subscribe for live events.
+    const sub: LiveSubscriber = { res, lastSentSeq: maxSeqSent }
+    let set = subscribers.get(runId)
+    if (!set) {
+      set = new Set<LiveSubscriber>()
+      subscribers.set(runId, set)
+    }
+    set.add(sub)
     req.on('close', () => {
-      run.subscribers.delete(res)
+      set?.delete(sub)
+      if (set?.size === 0) subscribers.delete(runId)
     })
   })
 
@@ -226,7 +277,6 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
       const resolved = resolveArtifactPath(opts.engine.artifactsDir, runId, relpath)
       res.setHeader('Content-Type', contentTypeFor(relpath))
       res.setHeader('Content-Length', String(resolved.size))
-      // Strict CSP: rendered images shouldn't navigate or pull from anywhere.
       res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:;")
       createReadStream(resolved.realPath).pipe(res)
     } catch (err) {

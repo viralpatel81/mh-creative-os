@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { AddressInfo } from 'node:net'
 import express from 'express'
 import type { Express } from 'express'
+import Database from 'better-sqlite3'
 
 import { registerAgentcyRoutes } from '../../src/agentcy/index.js'
 
@@ -28,6 +29,7 @@ async function startHarness(): Promise<Harness> {
   mkdirSync(join(artifactsDir, 'run_smoke'), { recursive: true })
   writeFileSync(join(artifactsDir, 'run_smoke', 'ad.png'), Buffer.from('fake-png'))
 
+  const db = new Database(':memory:')
   const app = express()
   app.use(express.json({ limit: '1mb' }))
   registerAgentcyRoutes(app, {
@@ -40,6 +42,7 @@ async function startHarness(): Promise<Harness> {
       cliCommand: '/bin/false',
       cliBaseArgs: [],
     },
+    db,
     runIdGenerator: () => 'run_fixed',
   })
 

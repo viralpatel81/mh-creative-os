@@ -3020,10 +3020,15 @@ export async function startServer({
       // Spawn the engine via pnpm exec tsx; mirrors how the existing
       // smoke-test scripts and engine vitest invoke it during dev. A
       // packaged-binary path (e.g., `agentcy` on PATH) becomes
-      // configurable in Phase E2 alongside durable run state.
+      // configurable in Phase E3 alongside subprocess detachment.
       cliCommand: 'pnpm',
       cliBaseArgs: ['exec', 'tsx', 'src/cli.ts'],
     },
+    // Reuse the daemon's existing app.sqlite handle so the agentcy_runs
+    // + agentcy_run_events tables live alongside projects/conversations/
+    // messages. migrateAgentcy(db) idempotently creates them on first
+    // call. Recovery sweep runs immediately after migration.
+    db,
   });
 
   registerDeployRoutes(app, {
