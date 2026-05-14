@@ -1,8 +1,8 @@
 // MODIFIED 2026-05-13 by mh-creative-os fork:
-// Added top-level branches for route.kind === 'brand' (Phase E3.3.b)
-// and route.kind === 'runs' (Phase E3.3.d) so /brands/:id and /runs
-// render their dedicated views instead of the home/project fallback.
-// No other behavior changes.
+// Added top-level branches for agentcy routes (Phases E3.3.b–.f):
+// 'brand' → BrandEditor, 'runs' → RunsDashboard, 'run' → RunDetail,
+// 'runs-new' → workflow request form. Project + home fallback paths
+// are unchanged.
 // Upstream: nexu-io/open-design @ 7c8305f4
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -15,6 +15,8 @@ import {
 } from '@open-design/contracts/analytics';
 import { BrandEditor } from './components/BrandEditor';
 import { EntryView } from './components/EntryView';
+import { RequestForm } from './components/RequestForm';
+import { RunDetail } from './components/RunDetail';
 import { RunsDashboard } from './components/RunsDashboard';
 import type { CreateInput } from './components/NewProjectPanel';
 import { MemoryToast } from './components/MemoryToast';
@@ -991,6 +993,10 @@ export function App() {
         <BrandEditor brandId={route.brandId} />
       ) : route.kind === 'runs' ? (
         <RunsDashboard />
+      ) : route.kind === 'run' ? (
+        <RunDetail runId={route.runId} />
+      ) : route.kind === 'runs-new' ? (
+        <RequestForm workflow={route.workflow} prefilledBrandId={route.brandId} />
       ) : activeProject ? (
         <ProjectView
           key={activeProject.id}

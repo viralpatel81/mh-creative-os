@@ -1,6 +1,7 @@
 // MODIFIED 2026-05-13 by mh-creative-os fork:
-// Added 'brand' Route kind (Phase E3.3.b) and 'runs' Route kind
-// (Phase E3.3.d) so /brands/:id and /runs are deep-linkable.
+// Added agentcy Route kinds: 'brand' (E3.3.b), 'runs' (E3.3.d),
+// 'run' (E3.3.e), and 'runs-new' (E3.3.f) so /brands/:id, /runs,
+// /runs/:runId, and /runs/new/:workflow are all deep-linkable.
 // parseRoute / buildPath learn the new shapes; navigate() is
 // unchanged.
 // Upstream: nexu-io/open-design @ 7c8305f4
@@ -13,11 +14,15 @@
 
 import { useEffect, useState } from 'react';
 
+export type WorkflowName = 'ad.post' | 'email.design' | 'popup.design';
+
 export type Route =
   | { kind: 'home' }
   | { kind: 'project'; projectId: string; fileName: string | null }
   | { kind: 'brand'; brandId: string }
-  | { kind: 'runs' };
+  | { kind: 'runs' }
+  | { kind: 'run'; runId: string }
+  | { kind: 'runs-new'; workflow: WorkflowName; brandId: string | null };
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
@@ -37,6 +42,18 @@ export function parseRoute(pathname: string): Route {
     return { kind: 'brand', brandId: decodeURIComponent(parts[1]) };
   }
   if (parts[0] === 'runs') {
+    if (parts[1] === 'new' && parts[2]) {
+      const workflow = decodeURIComponent(parts[2]);
+      if (workflow === 'ad.post' || workflow === 'email.design' || workflow === 'popup.design') {
+        const url = new URL(window.location.href);
+        const brandId = url.searchParams.get('brand');
+        return { kind: 'runs-new', workflow, brandId: brandId ?? null };
+      }
+      return { kind: 'runs' };
+    }
+    if (parts[1]) {
+      return { kind: 'run', runId: decodeURIComponent(parts[1]) };
+    }
     return { kind: 'runs' };
   }
   return { kind: 'home' };
@@ -45,6 +62,11 @@ export function parseRoute(pathname: string): Route {
 export function buildPath(route: Route): string {
   if (route.kind === 'home') return '/';
   if (route.kind === 'runs') return '/runs';
+  if (route.kind === 'run') return `/runs/${encodeURIComponent(route.runId)}`;
+  if (route.kind === 'runs-new') {
+    const base = `/runs/new/${encodeURIComponent(route.workflow)}`;
+    return route.brandId ? `${base}?brand=${encodeURIComponent(route.brandId)}` : base;
+  }
   if (route.kind === 'brand') return `/brands/${encodeURIComponent(route.brandId)}`;
   const id = encodeURIComponent(route.projectId);
   if (route.fileName) {
@@ -62,7 +84,7 @@ export function buildPath(route: Route): string {
 // `useRoute()` subscriber via a custom event.
 export function navigate(route: Route, opts: { replace?: boolean } = {}): void {
   const target = buildPath(route);
-  const current = window.location.pathname;
+  const current = window.location.pathname + window.location.search;
   if (target === current) return;
   if (opts.replace) {
     window.history.replaceState(null, '', target);

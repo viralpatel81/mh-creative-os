@@ -142,6 +142,7 @@ export function BrandEditor({ brandId, fetcher }: BrandEditorProps): JSX.Element
         <h1 className="brand-editor__title">{readableTitle(state, brandId)}</h1>
         {state.kind === 'loaded' ? (
           <div className="brand-editor__actions">
+            <LaunchMenu brandId={brandId} />
             <button
               type="button"
               data-testid="brand-discard"
@@ -199,6 +200,29 @@ export function BrandEditor({ brandId, fetcher }: BrandEditorProps): JSX.Element
           updateDraft={updateDraft}
         />
       )}
+    </div>
+  );
+}
+
+function LaunchMenu({ brandId }: { brandId: string }): JSX.Element {
+  return (
+    <div className="brand-editor__launch" data-testid="brand-launch-menu">
+      {(
+        [
+          ['ad.post', 'Launch ad'],
+          ['email.design', 'Launch email'],
+          ['popup.design', 'Launch popup'],
+        ] as const
+      ).map(([workflow, label]) => (
+        <button
+          key={workflow}
+          type="button"
+          data-testid={`brand-launch-${workflow}`}
+          onClick={() => navigate({ kind: 'runs-new', workflow, brandId })}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }

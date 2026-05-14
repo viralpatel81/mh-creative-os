@@ -201,7 +201,14 @@ export function RunsDashboard({ fetcher, pollIntervalMs }: RunsDashboardProps): 
             {runs.map((row) => (
               <tr key={row.runId} data-testid={`runs-row-${row.runId}`}>
                 <td>
-                  <code>{row.runId}</code>
+                  <button
+                    type="button"
+                    className="runs-dashboard__row-link"
+                    data-testid={`runs-row-link-${row.runId}`}
+                    onClick={() => navigate({ kind: 'run', runId: row.runId })}
+                  >
+                    <code>{row.runId}</code>
+                  </button>
                 </td>
                 <td>{row.workflow}</td>
                 <td>{row.brandId}</td>

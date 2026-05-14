@@ -115,6 +115,18 @@ describe('RunsDashboard', () => {
     expect(screen.getByTestId('runs-error').textContent).toMatch(/HTTP 500/);
   });
 
+  it('row link navigates to /runs/:runId', async () => {
+    const { fetcher } = mockFetcher([
+      {
+        runs: [{ ...baseRun, runId: 'r1', workflow: 'ad.post', status: 'succeeded' }],
+      },
+    ]);
+    render(<RunsDashboard fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('runs-row-link-r1'));
+    fireEvent.click(screen.getByTestId('runs-row-link-r1'));
+    expect(window.location.pathname).toBe('/runs/r1');
+  });
+
   it('polls while any row is running, stops once all are terminal', async () => {
     vi.useFakeTimers();
     const responses = [
