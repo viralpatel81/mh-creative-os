@@ -76,3 +76,51 @@ describe('startupRecovery', () => {
     }
   })
 })
+
+describe('Runtime constructor auto-recover', () => {
+  it('reaps stale running rows when autoRecover is enabled (default)', async () => {
+    const { createRuntime } = await import('./runtime.js')
+    const root = mkdtempSync(join(tmpdir(), 'mh-auto-recover-'))
+    try {
+      // Seed a stale row directly via the DB before constructing the runtime.
+      const setupDb = openRuntimeDb(root)
+      const oldStart = new Date(Date.now() - 120_000).toISOString()
+      insertRun(setupDb, { id: 'r-orphan', status: 'running', startedAt: oldStart })
+      setupDb.close()
+
+      // Constructing with autoRecover (default) should reap it.
+      createRuntime({ root, autoRecover: { staleAfterMs: 30_000 } })
+
+      const db = openRuntimeDb(root)
+      const after = db.prepare('SELECT status FROM runs WHERE id=?').get('r-orphan') as
+        | { status: string }
+        | undefined
+      expect(after?.status).toBe('failed')
+      db.close()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('leaves stale rows alone when autoRecover is false', async () => {
+    const { createRuntime } = await import('./runtime.js')
+    const root = mkdtempSync(join(tmpdir(), 'mh-no-auto-recover-'))
+    try {
+      const setupDb = openRuntimeDb(root)
+      const oldStart = new Date(Date.now() - 120_000).toISOString()
+      insertRun(setupDb, { id: 'r-keep', status: 'running', startedAt: oldStart })
+      setupDb.close()
+
+      createRuntime({ root, autoRecover: false })
+
+      const db = openRuntimeDb(root)
+      const after = db.prepare('SELECT status FROM runs WHERE id=?').get('r-keep') as
+        | { status: string }
+        | undefined
+      expect(after?.status).toBe('running')
+      db.close()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})

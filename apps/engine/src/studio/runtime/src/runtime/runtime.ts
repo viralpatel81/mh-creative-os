@@ -40,6 +40,8 @@ export interface RunDetails {
 }
 
 import { NoopSink, type RuntimeEventSink } from './events.js'
+import { startupRecovery, type RecoveryOptions, type RecoveryResult } from './recovery.js'
+import { reconcileOutbox, type ReconcileResult } from './outbox.js'
 
 interface RuntimeOptions {
   root?: string
@@ -50,6 +52,12 @@ interface RuntimeOptions {
    * `--stream-events` CLI flag; see src/cli/ for that wiring.
    */
   eventSink?: RuntimeEventSink
+  /**
+   * Auto-run startup recovery + outbox reconciliation when the constructor
+   * is called. Pass `false` to skip (useful for tests that want full control
+   * over recovery timing). Default: `{ staleAfterMs: 60_000 }`.
+   */
+  autoRecover?: RecoveryOptions | false
 }
 
 function normalizeImportedBrief(
@@ -120,6 +128,20 @@ export class Runtime {
     this.db = openRuntimeDb(this.paths.root)
     this.socialPublisher = options.socialPublisher ?? publishSocialPost
     this.eventSink = options.eventSink ?? new NoopSink()
+
+    if (options.autoRecover !== false) {
+      const recoverOpts = options.autoRecover ?? { staleAfterMs: 60_000 }
+      startupRecovery(this.db, recoverOpts)
+      reconcileOutbox(this.db)
+    }
+  }
+
+  recover(opts: RecoveryOptions): RecoveryResult {
+    return startupRecovery(this.db, opts)
+  }
+
+  reconcileOutbox(): ReconcileResult {
+    return reconcileOutbox(this.db)
   }
 
   async runWorkflow(input: RunWorkflowInput): Promise<RunRecord> {
