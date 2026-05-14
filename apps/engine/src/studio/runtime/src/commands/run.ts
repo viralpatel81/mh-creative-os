@@ -1,6 +1,7 @@
 import { isWorkflowName } from '../domain/types'
 import { loadBriefV1 } from '../domain/brief-v1'
 import { createRuntime } from '../runtime/runtime'
+import { getCliEventSink, takeStreamEventsFlag } from '../cli/stream'
 
 function parseWorkflowInput(args: string[]): Record<string, unknown> {
   const input: Record<string, unknown> = {}
@@ -28,9 +29,12 @@ function parseWorkflowInput(args: string[]): Record<string, unknown> {
 }
 
 export async function runWorkflowCommand(args: string[], root?: string): Promise<unknown> {
-  const [workflow, ...rest] = args
+  // Pull --stream-events out before the generic --flag parser sees it so it
+  // doesn't end up in the workflow input map.
+  const { streamEvents, args: filtered } = takeStreamEventsFlag(args)
+  const [workflow, ...rest] = filtered
   if (!workflow) {
-    throw new Error('Usage: run <workflow> --brand <id> [--pillar <id>] [--topic "..."] [--brief-file path/to/brief.v1.json]')
+    throw new Error('Usage: run <workflow> --brand <id> [--pillar <id>] [--topic "..."] [--brief-file path/to/brief.v1.json] [--stream-events]')
   }
 
   if (!isWorkflowName(workflow)) {
@@ -40,7 +44,7 @@ export async function runWorkflowCommand(args: string[], root?: string): Promise
   const input = parseWorkflowInput(rest)
   const brand = typeof input.brand === 'string' ? input.brand : undefined
   if (!brand) {
-    throw new Error('Usage: run <workflow> --brand <id> [--pillar <id>] [--topic "..."] [--brief-file path/to/brief.v1.json]')
+    throw new Error('Usage: run <workflow> --brand <id> [--pillar <id>] [--topic "..."] [--brief-file path/to/brief.v1.json] [--stream-events]')
   }
 
   if (typeof input['brief-file'] === 'string') {
@@ -54,7 +58,8 @@ export async function runWorkflowCommand(args: string[], root?: string): Promise
   delete input.brand
   delete input['auto-approve']
   delete input['brief-file']
-  const runtime = createRuntime({ root })
+  const eventSink = getCliEventSink(streamEvents)
+  const runtime = createRuntime({ root, eventSink })
   return await runtime.runWorkflow({
     workflow,
     brand,
