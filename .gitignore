@@ -72,6 +72,8 @@ apps/engine/node_modules/
 apps/engine/.venv/
 apps/engine/.pytest_cache/
 apps/engine/state/
-apps/engine/__pycache__/
-apps/engine/**/__pycache__/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+packages/**/.venv/
 .od/
