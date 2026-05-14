@@ -5,11 +5,14 @@ export const SOCIAL_PLATFORMS = ['twitter', 'linkedin', 'facebook', 'instagram',
 export type SocialPlatform = typeof SOCIAL_PLATFORMS[number]
 
 export type RunStatus =
+  | 'queued'
+  | 'running'
   | 'in_review'
   | 'approved'
   | 'rejected'
-  | 'published'
   | 'failed'
+  | 'published'
+  | 'cancelled'
 
 export type ArtifactType =
   | 'signal_packet'
