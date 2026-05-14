@@ -247,6 +247,7 @@ import { registerActiveContextRoutes } from './active-context-routes.js';
 import { registerMcpRoutes } from './mcp-routes.js';
 import { registerLiveArtifactRoutes } from './live-artifact-routes.js';
 import { registerDeployRoutes, registerDeploymentCheckRoutes } from './deploy-routes.js';
+import { registerAgentcyRoutes } from './agentcy/index.js';
 import { registerMediaRoutes } from './media-routes.js';
 import { registerProjectRoutes, registerProjectArtifactRoutes, registerProjectFileRoutes, registerProjectUploadRoutes } from './project-routes.js';
 import { registerFinalizeRoutes, registerImportRoutes, registerProjectExportRoutes } from './import-export-routes.js';
@@ -3006,6 +3007,25 @@ export async function startServer({
     projectStore: projectStoreDeps,
   });
   app.use('/artifacts', express.static(ARTIFACTS_DIR));
+
+  // agentcy bridge — exposes /api/agentcy/runs/workflow (POST), SSE events,
+  // status, and static-artifact reads from apps/engine/state/artifacts/.
+  // Kept additive: open-design's chat-shaped run/SSE path is untouched.
+  const agentcyRoot =
+    process.env.OD_AGENTCY_ROOT ?? path.join(PROJECT_ROOT, 'apps', 'engine');
+  registerAgentcyRoutes(app, {
+    engine: {
+      engineRoot: agentcyRoot,
+      artifactsDir: path.join(agentcyRoot, 'state', 'artifacts'),
+      // Spawn the engine via pnpm exec tsx; mirrors how the existing
+      // smoke-test scripts and engine vitest invoke it during dev. A
+      // packaged-binary path (e.g., `agentcy` on PATH) becomes
+      // configurable in Phase E2 alongside durable run state.
+      cliCommand: 'pnpm',
+      cliBaseArgs: ['exec', 'tsx', 'src/cli.ts'],
+    },
+  });
+
   registerDeployRoutes(app, {
     db,
     http: httpDeps,

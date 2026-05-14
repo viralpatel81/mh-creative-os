@@ -29,6 +29,9 @@ importers:
 
   apps/daemon:
     dependencies:
+      '@mh/protocols':
+        specifier: workspace:*
+        version: link:../../packages/protocols/ts
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.0
         version: 1.29.0(zod@4.4.2)
@@ -7752,7 +7755,7 @@ snapshots:
       react-refresh: 0.18.0
       remotion: 4.0.460(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       source-map: 0.7.3
-      style-loader: 4.0.0(webpack@5.105.0(lightningcss@1.32.0))
+      style-loader: 4.0.0(webpack@5.105.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10))
       webpack: 5.105.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)
     transitivePeerDependencies:
       - '@minify-html/node'
@@ -12084,7 +12087,7 @@ snapshots:
 
   strnum@2.3.0: {}
 
-  style-loader@4.0.0(webpack@5.105.0(lightningcss@1.32.0)):
+  style-loader@4.0.0(webpack@5.105.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)):
     dependencies:
       webpack: 5.105.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)
 
@@ -12160,7 +12163,7 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.6.3
 
-  terser-webpack-plugin@5.6.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)(webpack@5.105.0(lightningcss@1.32.0)):
+  terser-webpack-plugin@5.6.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)(webpack@5.105.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
@@ -12802,7 +12805,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.6.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)(webpack@5.105.0(lightningcss@1.32.0))
+      terser-webpack-plugin: 5.6.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10)(webpack@5.105.0(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.10))
       watchpack: 2.5.1
       webpack-sources: 3.4.1
     transitivePeerDependencies:

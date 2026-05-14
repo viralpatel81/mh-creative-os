@@ -1,7 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import Ajv, { type ValidateFunction } from 'ajv'
+import AjvImport, { type ValidateFunction, type Ajv as AjvType } from 'ajv'
+
+// Ajv ships dual CJS/ESM exports; under NodeNext, `import Ajv from 'ajv'`
+// resolves to the ESM default which is the *namespace* (not the class).
+// Strip the .default off when present so both module resolutions work.
+const AjvCtor: typeof AjvType =
+  (AjvImport as unknown as { default?: typeof AjvType }).default ??
+  (AjvImport as unknown as typeof AjvType)
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 export const SCHEMAS_DIR = join(HERE, '..', '..', 'schemas')
@@ -13,7 +20,7 @@ export class ProtocolValidationError extends Error {
   }
 }
 
-const ajv = new Ajv({ strict: false, allErrors: true })
+const ajv = new AjvCtor({ strict: false, allErrors: true })
 const cache = new Map<string, ValidateFunction>()
 
 function loadValidator(name: string): ValidateFunction {
