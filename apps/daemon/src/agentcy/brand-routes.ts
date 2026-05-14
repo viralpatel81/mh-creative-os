@@ -19,11 +19,17 @@
 // Write (PUT) is intentionally deferred to E3.3.c so the brand-loader
 // serializer can land in its own commit with parity tests.
 
-import { readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import type { Express, Request, Response } from 'express'
 
-import { BrandLoaderError, loadBrandProfile } from '@mh/brand-loader'
+import {
+  BrandLoaderError,
+  loadBrandProfile,
+  parseFrontmatter,
+  serializeBrandProfile,
+} from '@mh/brand-loader'
+import type { BrandProfile } from '@mh/brand-loader'
 
 import type { AgentcyEngineLocation } from './types.js'
 
@@ -114,5 +120,60 @@ export function registerAgentcyBrandRoutes(app: Express, opts: RegisterBrandRout
       }
       throw err
     }
+  })
+
+  // E3.3.c — write the BrandProfile back to brand.md. The on-disk
+  // markdown body (everything after the closing ---) is preserved by
+  // re-parsing the existing file first; only the YAML frontmatter is
+  // replaced. The URL id is the source of truth — the body's `id`
+  // field must match.
+  app.put('/api/agentcy/brands/:id', (req: Request, res: Response) => {
+    const id = (req.params as Record<string, string | undefined>).id
+    if (!id || /[\\/.]/.test(id)) {
+      res.status(400).json({ error: 'invalid brand id' })
+      return
+    }
+    const body = req.body as Partial<BrandProfile> | undefined
+    if (!body || typeof body !== 'object') {
+      res.status(400).json({ error: 'body must be a BrandProfile object' })
+      return
+    }
+    if (typeof body.id !== 'string' || body.id !== id) {
+      res.status(400).json({ error: "body.id must match URL :id" })
+      return
+    }
+    if (typeof body.name !== 'string' || body.name.length === 0) {
+      res.status(400).json({ error: 'body.name is required' })
+      return
+    }
+    const brandDir = join(brandsRoot(opts.engine), id)
+    const brandFile = join(brandDir, 'brand.md')
+    let existingBody = ''
+    try {
+      const raw = readFileSync(brandFile, 'utf8')
+      existingBody = parseFrontmatter(raw).body
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code === 'ENOENT') {
+        res.status(404).json({ error: 'brand not found' })
+        return
+      }
+      throw err
+    }
+    let serialized: string
+    try {
+      serialized = serializeBrandProfile(body as BrandProfile, { body: existingBody })
+    } catch (err) {
+      if (err instanceof BrandLoaderError) {
+        res.status(422).json({ error: err.message })
+        return
+      }
+      throw err
+    }
+    writeFileSync(brandFile, serialized, 'utf8')
+    // Round-trip read so the response reflects normalization (e.g.
+    // YAML key ordering changes) — the client's optimistic state can
+    // re-sync without a second GET.
+    res.json(loadBrandProfile(brandDir))
   })
 }

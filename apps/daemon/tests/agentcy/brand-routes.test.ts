@@ -183,3 +183,106 @@ describe('GET /api/agentcy/brands/:id', () => {
     }
   })
 })
+
+describe('PUT /api/agentcy/brands/:id', () => {
+  // Each PUT test seeds its own brand dir so the GET fixtures stay
+  // pristine (vitest runs describe blocks in source order).
+  function seedBrand(id: string, frontmatter: string, body = ''): string {
+    const dir = join(h.engineRoot, 'brands', id)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'brand.md'), `---\n${frontmatter}\n---\n${body}`)
+    return dir
+  }
+
+  it('writes the updated frontmatter back to brand.md and returns the round-tripped profile', async () => {
+    seedBrand('write-basic', ['id: write-basic', 'name: Basic'].join('\n'))
+    const updated = {
+      id: 'write-basic',
+      name: 'Basic',
+      positioning: 'caregiver platform',
+      voice_adjectives: ['warm', 'direct', 'curious'],
+    }
+    const r = await fetch(`${h.baseUrl}/api/agentcy/brands/write-basic`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(updated),
+    })
+    expect(r.status).toBe(200)
+    const echoed = (await r.json()) as Record<string, unknown>
+    expect(echoed.positioning).toBe('caregiver platform')
+    expect(echoed.voice_adjectives).toEqual(['warm', 'direct', 'curious'])
+    // GET reflects the write.
+    const after = (await fetch(`${h.baseUrl}/api/agentcy/brands/write-basic`).then((r) =>
+      r.json(),
+    )) as Record<string, unknown>
+    expect(after.positioning).toBe('caregiver platform')
+  })
+
+  it('preserves the markdown body after the closing --- delimiter', async () => {
+    seedBrand(
+      'write-body',
+      ['id: write-body', 'name: With Body'].join('\n'),
+      '\nKeep this body across saves.\n',
+    )
+    const r = await fetch(`${h.baseUrl}/api/agentcy/brands/write-body`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'write-body', name: 'With Body', positioning: 'edited' }),
+    })
+    expect(r.status).toBe(200)
+    const { readFileSync: read } = await import('node:fs')
+    const after = read(join(h.engineRoot, 'brands', 'write-body', 'brand.md'), 'utf8')
+    expect(after).toContain('Keep this body across saves.')
+    expect(after).toContain('positioning: edited')
+  })
+
+  it('400s when body.id does not match URL :id', async () => {
+    seedBrand('write-mismatch', ['id: write-mismatch', 'name: M'].join('\n'))
+    const r = await fetch(`${h.baseUrl}/api/agentcy/brands/write-mismatch`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'someoneelse', name: 'X' }),
+    })
+    expect(r.status).toBe(400)
+  })
+
+  it('400s when body.name is missing', async () => {
+    seedBrand('write-noname', ['id: write-noname', 'name: NN'].join('\n'))
+    const r = await fetch(`${h.baseUrl}/api/agentcy/brands/write-noname`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'write-noname' }),
+    })
+    expect(r.status).toBe(400)
+  })
+
+  it('400s for non-object body', async () => {
+    seedBrand('write-nonobj', ['id: write-nonobj', 'name: N'].join('\n'))
+    const r = await fetch(`${h.baseUrl}/api/agentcy/brands/write-nonobj`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: '"a string, not an object"',
+    })
+    expect(r.status).toBe(400)
+  })
+
+  it('404s when the brand.md does not exist', async () => {
+    const r = await fetch(`${h.baseUrl}/api/agentcy/brands/never-existed`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'never-existed', name: 'X' }),
+    })
+    expect(r.status).toBe(404)
+  })
+
+  it('400s for path-like ids on PUT', async () => {
+    for (const id of ['../etc', 'a/b', 'a.b']) {
+      const r = await fetch(`${h.baseUrl}/api/agentcy/brands/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, name: 'X' }),
+      })
+      expect(r.status, `id=${id}`).toBe(400)
+    }
+  })
+})

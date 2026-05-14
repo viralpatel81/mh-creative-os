@@ -4,5 +4,11 @@
 // against ../tests/fixtures/.
 
 export type { BrandProfile, Persona } from './types.js'
-export { BrandLoaderError, loadBrandProfile, loadBrandProfileFromText, parseFrontmatter } from './loader.js'
+export {
+  BrandLoaderError,
+  loadBrandProfile,
+  loadBrandProfileFromText,
+  parseFrontmatter,
+  serializeBrandProfile,
+} from './loader.js'
 export { loadLegacyBrandJson, migrateLegacyBrandJson } from './legacy.js'

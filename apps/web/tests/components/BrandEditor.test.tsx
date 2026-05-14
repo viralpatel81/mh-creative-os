@@ -1,19 +1,14 @@
 // @vitest-environment jsdom
 //
-// E3.3.b — BrandEditor read-only component tests.
+// E3.3.b + E3.3.c — BrandEditor tests.
 //
-// Coverage:
-//   - Renders all six tabs, defaults to Identity.
-//   - Tab switch shows the expected fields (mh2 extension fields:
-//     photography_direction, packaging_details, ad_creative_style,
-//     voice_adjectives, etc.).
-//   - 404 surfaces an empty-state.
-//   - 422 surfaces a malformed-banner.
-//   - BrandsQuickLink hides when daemon returns no brands and renders
-//     chips that deep-link to /brands/:id when brands exist.
+// Identity / Voice / Visual tabs are editable: assertions check input
+// values and verify Save dispatches PUT with the right body. Audience /
+// Offers / Channels stay read-only this phase and are asserted via
+// text content.
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { BrandEditor } from '../../src/components/BrandEditor';
 import { BrandsQuickLink } from '../../src/components/BrandsQuickLink';
@@ -52,17 +47,43 @@ function mockFetchJson(status: number, body: unknown): typeof fetch {
   ) as unknown as typeof fetch;
 }
 
-beforeEach(() => {
-  // BrandEditor's "Back to home" button calls navigate(). The tiny
-  // router uses window.history.pushState which jsdom supports.
-});
+/**
+ * Build a fetcher that returns one response for GET and another for
+ * PUT. PUT also captures the body so tests can assert on it.
+ */
+function mockGetPutFetcher(args: {
+  getStatus?: number;
+  getBody: unknown;
+  putStatus?: number;
+  putBody?: unknown;
+}): { fetcher: typeof fetch; getPutBody: () => unknown | null } {
+  let capturedPutBody: unknown | null = null;
+  const fn = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (method === 'PUT') {
+      capturedPutBody = init?.body ? JSON.parse(init.body as string) : null;
+      return new Response(
+        JSON.stringify(args.putBody ?? capturedPutBody ?? {}),
+        {
+          status: args.putStatus ?? 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
+    }
+    return new Response(JSON.stringify(args.getBody), {
+      status: args.getStatus ?? 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as unknown as typeof fetch;
+  return { fetcher: fn, getPutBody: () => capturedPutBody };
+}
 
 afterEach(() => {
   cleanup();
   window.history.replaceState(null, '', '/');
 });
 
-describe('BrandEditor', () => {
+describe('BrandEditor — read paths', () => {
   it('renders all six tabs and defaults to Identity', async () => {
     const fetcher = mockFetchJson(200, profileFixture);
     render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
@@ -70,43 +91,54 @@ describe('BrandEditor', () => {
     for (const tab of ['identity', 'voice', 'visual', 'audience', 'offers', 'channels']) {
       expect(screen.getByTestId(`brand-tab-${tab}`)).toBeTruthy();
     }
-    // Default panel is identity — positioning is visible.
-    expect(screen.getByText('caregiver support')).toBeTruthy();
     expect(screen.getByTestId('brand-panel-identity')).toBeTruthy();
+    // Positioning is now a textarea — verify by display value.
+    expect(
+      (screen.getByTestId('brand-field-positioning') as HTMLTextAreaElement).value,
+    ).toBe('caregiver support');
   });
 
-  it('switches to the Voice tab and shows tone + adjectives', async () => {
+  it('renders editable inputs on the Voice tab', async () => {
     const fetcher = mockFetchJson(200, profileFixture);
     render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
     await waitFor(() => screen.getByTestId('brand-tab-voice'));
     fireEvent.click(screen.getByTestId('brand-tab-voice'));
-    expect(screen.getByTestId('brand-panel-voice')).toBeTruthy();
-    expect(screen.getByText('warm')).toBeTruthy(); // tone
-    expect(screen.getByText('plainspoken')).toBeTruthy(); // style
-    expect(screen.getByText('warm, direct')).toBeTruthy(); // adjectives joined
+    expect((screen.getByTestId('brand-field-tone') as HTMLInputElement).value).toBe('warm');
+    expect((screen.getByTestId('brand-field-style') as HTMLInputElement).value).toBe('plainspoken');
+    // voice_adjectives renders as a comma-separated csv input.
+    expect((screen.getByTestId('brand-field-voice_adjectives') as HTMLInputElement).value).toBe(
+      'warm, direct',
+    );
   });
 
-  it('switches to Visual and shows photography + ad creative fields', async () => {
+  it('renders editable inputs on the Visual tab', async () => {
     const fetcher = mockFetchJson(200, profileFixture);
     render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
     await waitFor(() => screen.getByTestId('brand-tab-visual'));
     fireEvent.click(screen.getByTestId('brand-tab-visual'));
-    expect(screen.getByText('soft daylight')).toBeTruthy(); // lighting
-    expect(screen.getByText('hopeful')).toBeTruthy(); // mood
-    expect(screen.getByText('matte white box')).toBeTruthy(); // packaging
-    expect(screen.getByText('1:1, 4:5')).toBeTruthy(); // ad creative formats
+    expect((screen.getByTestId('brand-field-lighting') as HTMLInputElement).value).toBe(
+      'soft daylight',
+    );
+    expect((screen.getByTestId('brand-field-mood') as HTMLInputElement).value).toBe('hopeful');
+    expect(
+      (screen.getByTestId('brand-field-physical_description') as HTMLTextAreaElement).value,
+    ).toBe('matte white box');
+    expect((screen.getByTestId('brand-field-typical_formats') as HTMLInputElement).value).toBe(
+      '1:1, 4:5',
+    );
   });
 
-  it('switches to Audience and renders personas + audiences', async () => {
+  it('renders read-only Audience tab with personas + audiences', async () => {
     const fetcher = mockFetchJson(200, profileFixture);
     render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
     await waitFor(() => screen.getByTestId('brand-tab-audience'));
     fireEvent.click(screen.getByTestId('brand-tab-audience'));
     expect(screen.getByText('Maria')).toBeTruthy();
     expect(screen.getByText(/Adult children/)).toBeTruthy();
+    expect(screen.getByTestId('brand-viewonly-hint')).toBeTruthy();
   });
 
-  it('switches to Offers and links the offer URL', async () => {
+  it('renders read-only Offers tab with linked offer URL', async () => {
     const fetcher = mockFetchJson(200, profileFixture);
     render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
     await waitFor(() => screen.getByTestId('brand-tab-offers'));
@@ -116,7 +148,7 @@ describe('BrandEditor', () => {
     expect(screen.getByText(/Sign up/)).toBeTruthy();
   });
 
-  it('switches to Channels and lists pillars + formats', async () => {
+  it('renders read-only Channels tab with pillars + formats', async () => {
     const fetcher = mockFetchJson(200, profileFixture);
     render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
     await waitFor(() => screen.getByTestId('brand-tab-channels'));
@@ -143,8 +175,103 @@ describe('BrandEditor', () => {
     const fetcher = mockFetchJson(200, { id: 'noname' });
     render(<BrandEditor brandId="noname" fetcher={fetcher} />);
     await waitFor(() => screen.getByTestId('brand-tab-identity'));
-    // Title falls back to the brandId.
     expect(screen.getAllByText('noname').length).toBeGreaterThan(0);
+  });
+});
+
+describe('BrandEditor — write affordance', () => {
+  it('disables Save + Discard until an edit happens', async () => {
+    const { fetcher } = mockGetPutFetcher({ getBody: profileFixture });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-save'));
+    expect((screen.getByTestId('brand-save') as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId('brand-discard') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('enables Save once the user changes a field, then PUTs the draft', async () => {
+    const { fetcher, getPutBody } = mockGetPutFetcher({ getBody: profileFixture });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-field-positioning'));
+    const positioning = screen.getByTestId('brand-field-positioning') as HTMLTextAreaElement;
+    fireEvent.change(positioning, { target: { value: 'caregiver platform' } });
+    expect((screen.getByTestId('brand-save') as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByTestId('brand-save'));
+    await waitFor(() => screen.getByTestId('brand-save-status-saved'));
+    const body = getPutBody() as Record<string, unknown> | null;
+    expect(body?.id).toBe('givecare');
+    expect(body?.positioning).toBe('caregiver platform');
+  });
+
+  it('Discard reverts dirty edits to the last loaded baseline', async () => {
+    const { fetcher } = mockGetPutFetcher({ getBody: profileFixture });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-field-positioning'));
+    const field = screen.getByTestId('brand-field-positioning') as HTMLTextAreaElement;
+    fireEvent.change(field, { target: { value: 'experimental' } });
+    expect(field.value).toBe('experimental');
+    fireEvent.click(screen.getByTestId('brand-discard'));
+    expect(
+      (screen.getByTestId('brand-field-positioning') as HTMLTextAreaElement).value,
+    ).toBe('caregiver support');
+    expect((screen.getByTestId('brand-save') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('serializes voice_adjectives back as an array of strings', async () => {
+    const { fetcher, getPutBody } = mockGetPutFetcher({ getBody: profileFixture });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-tab-voice'));
+    fireEvent.click(screen.getByTestId('brand-tab-voice'));
+    const adjectives = screen.getByTestId('brand-field-voice_adjectives') as HTMLInputElement;
+    fireEvent.change(adjectives, { target: { value: 'warm, direct, curious' } });
+    fireEvent.click(screen.getByTestId('brand-save'));
+    await waitFor(() => screen.getByTestId('brand-save-status-saved'));
+    const body = getPutBody() as Record<string, unknown> | null;
+    expect(body?.voice_adjectives).toEqual(['warm', 'direct', 'curious']);
+  });
+
+  it('writes nested photography_direction without losing siblings', async () => {
+    const { fetcher, getPutBody } = mockGetPutFetcher({ getBody: profileFixture });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-tab-visual'));
+    fireEvent.click(screen.getByTestId('brand-tab-visual'));
+    const lighting = screen.getByTestId('brand-field-lighting') as HTMLInputElement;
+    fireEvent.change(lighting, { target: { value: 'overcast' } });
+    fireEvent.click(screen.getByTestId('brand-save'));
+    await waitFor(() => screen.getByTestId('brand-save-status-saved'));
+    const body = getPutBody() as Record<string, unknown> | null;
+    const photo = body?.photography_direction as Record<string, unknown>;
+    expect(photo.lighting).toBe('overcast');
+    // mood + composition came in via baseline and must survive.
+    expect(photo.mood).toBe('hopeful');
+    expect(photo.composition).toBe('rule of thirds');
+  });
+
+  it('surfaces an error banner and leaves the draft dirty when the daemon returns 4xx', async () => {
+    const { fetcher } = mockGetPutFetcher({
+      getBody: profileFixture,
+      putStatus: 422,
+      putBody: { error: 'invalid YAML frontmatter: oops' },
+    });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-field-positioning'));
+    fireEvent.change(screen.getByTestId('brand-field-positioning'), {
+      target: { value: 'breaks YAML' },
+    });
+    fireEvent.click(screen.getByTestId('brand-save'));
+    await waitFor(() => screen.getByTestId('brand-save-status-error'));
+    expect(screen.getByTestId('brand-save-status-error').textContent).toMatch(/invalid YAML/);
+    // Draft stays dirty: Save remains clickable, baseline unchanged.
+    expect((screen.getByTestId('brand-save') as HTMLButtonElement).disabled).toBe(false);
+    expect(
+      (screen.getByTestId('brand-field-positioning') as HTMLTextAreaElement).value,
+    ).toBe('breaks YAML');
+  });
+
+  it('id field is read-only', async () => {
+    const { fetcher } = mockGetPutFetcher({ getBody: profileFixture });
+    render(<BrandEditor brandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brand-field-id-readonly'));
+    expect(screen.getByTestId('brand-field-id-readonly').textContent).toBe('givecare');
   });
 });
 
@@ -175,7 +302,6 @@ describe('BrandsQuickLink', () => {
   it('renders nothing when the daemon returns no brands', async () => {
     const fetcher = mockFetchJson(200, { brands: [] });
     const { container } = render(<BrandsQuickLink fetcher={fetcher} />);
-    // Wait one microtask so the effect resolves.
     await new Promise((r) => setTimeout(r, 0));
     expect(container.querySelector('[data-testid="brands-quick-link"]')).toBeNull();
   });
