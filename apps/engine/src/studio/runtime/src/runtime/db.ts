@@ -15,6 +15,13 @@ export function openRuntimeDb(root?: string): DatabaseSync {
   const db = new DatabaseSync(paths.dbPath)
 
   db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA busy_timeout = 5000;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA foreign_keys = ON;
+  `)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS runs (
       id TEXT PRIMARY KEY,
       workflow TEXT NOT NULL,
