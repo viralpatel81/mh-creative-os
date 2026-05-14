@@ -1,0 +1,23 @@
+mh-creative-os
+Copyright 2026 MarketerHire
+
+This product includes software developed by Open Design contributors
+(https://github.com/nexu-io/open-design), licensed under the Apache License,
+Version 2.0 (see LICENSE).
+
+  Pinned upstream commit: 7c8305f4862796cebe0e05b6fc6406823a8debf2
+  Pinned upstream tag:    upstream-pin-2026-05-13
+  Pinned date:            2026-05-13
+  Frozen snapshot:        third_party/open-design-upstream/
+
+This fork adds:
+  - agentcy engine integration (apps/engine/ — separate codebase, see
+    apps/engine/CLAUDE.md for its own license/attribution)
+  - durable workflow run storage in the daemon (apps/daemon/ extensions)
+  - image artifact rendering (apps/web/ extensions)
+  - ad/email/popup workflow discovery flows
+  - unified brand loader (packages/brand-loader/)
+  - workflow protocol schemas (packages/protocols/)
+
+Modifications to vendored open-design files are marked with a change-notice
+header. See git log on apps/web/, apps/daemon/, and packages/ for details.

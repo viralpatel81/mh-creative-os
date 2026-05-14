@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>metrics — agentcy module 5</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#fbf6e9;--paper:#fffaef;--ink:#1c1a14;--dim:#76705e;--line:#e3dcc4;--accent:#a8451f;--mono:ui-monospace,"SF Mono",Menlo,monospace;--serif:"Iowan Old Style",Palatino,Georgia,serif;--sans:-apple-system,"Inter",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  .wrap{max-width:880px;margin:0 auto;padding:36px 28px 120px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;font:12px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .top a{color:var(--accent);text-decoration:none}
+  .top .step{background:var(--accent);color:#fff;padding:4px 10px;border-radius:999px}
+  h1{font:600 44px/1.1 var(--serif);letter-spacing:-.01em;margin:0 0 8px;color:var(--accent)}
+  .role{font-size:19px;color:var(--dim);margin:0 0 36px;max-width:680px}
+  h2{font:600 24px/1.2 var(--serif);margin:48px 0 12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h3{font:600 13px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:20px 0 8px}
+  p{margin:0 0 12px;max-width:680px}
+  code{font:13px var(--mono);background:#f3e2d6;padding:2px 6px;border-radius:4px;color:var(--accent)}
+  .pre{background:var(--paper);border:1px solid var(--line);padding:14px 18px;border-radius:6px;font:12.5px/1.55 var(--mono);overflow-x:auto;margin:14px 0;white-space:pre}
+  .pre .c{color:var(--dim)} .pre .k{color:var(--accent)} .pre .v{color:#3a6b48} .pre .s{color:#8a5a1b}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  table th,table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  table th{font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+  table td.f{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
+  .nav{margin-top:48px;display:flex;justify-content:space-between;font:13px var(--sans);padding-top:18px;border-top:1px solid var(--line)}
+  .nav a{color:var(--accent);text-decoration:none}
+  .callout{background:#f3e2d6;border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0;font-size:14.5px}
+  /* loop diagram */
+  .loop{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:24px;margin:18px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a href="module-studio.html">← studio</a>
+  <span class="step">step 5 of 5</span>
+  <a href="workflows.html">overview ↑</a>
+</div>
+
+<h1>metrics</h1>
+<p class="role">The feedback loop. Reads what actually happened after publishing, normalizes it, and feeds it back to forecast as calibration data. Small module — only 6 files — but it's what turns this from a generator into a learning system.</p>
+
+<h2>What it actually does</h2>
+<p>Two operations, two commands:</p>
+
+<table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td class="f">metrics adapt</td><td>Take a <code>run_result.v1</code> (what the studio published) + a sidecar JSON of realized engagement (likes, shares, comments, click-through) and produce a <code>performance.v1</code> artifact in a normalized shape. This is just data plumbing — read messy real-world numbers, output clean schema-conformant ones.</td></tr>
+<tr><td class="f">metrics calibrate</td><td>Take a <code>forecast.v1</code> (what we predicted) + the <code>performance.v1</code> (what actually happened) and emit calibration data. This tells the forecast module which scenarios were close and which were wrong, so the next forecast for this brand can update its priors.</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+  <b>This is the loop-closing module.</b> Without metrics, the suite is a generator — it predicts, it publishes, and forgets. With metrics, every published post becomes training data for the next forecast. The system gets better at predicting <i>this specific brand's</i> audience over time.
+</div>
+
+<h2>The loop, made literal</h2>
+
+<div class="loop">
+<svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a8451f"/>
+    </marker>
+  </defs>
+  <style>
+    .b{fill:#fffaef;stroke:#e3dcc4;stroke-width:1.5}
+    .t{font:600 13px Georgia,serif;fill:#1c1a14}
+    .l{font:11px ui-monospace,Menlo,monospace;fill:#76705e}
+    .a{stroke:#a8451f;stroke-width:1.5;fill:none}
+    .a2{stroke:#76705e;stroke-width:1.2;fill:none;stroke-dasharray:4,3}
+  </style>
+  <!-- forecast -->
+  <rect class="b" x="40" y="50" width="140" height="60" rx="6"/>
+  <text class="t" x="110" y="78" text-anchor="middle">forecast</text>
+  <text class="l" x="110" y="95" text-anchor="middle">forecast.v1</text>
+
+  <!-- studio -->
+  <rect class="b" x="280" y="50" width="140" height="60" rx="6"/>
+  <text class="t" x="350" y="78" text-anchor="middle">studio</text>
+  <text class="l" x="350" y="95" text-anchor="middle">run_result.v1</text>
+
+  <!-- realized -->
+  <rect class="b" x="520" y="50" width="140" height="60" rx="6"/>
+  <text class="t" x="590" y="78" text-anchor="middle">real world</text>
+  <text class="l" x="590" y="95" text-anchor="middle">engagement.json (sidecar)</text>
+
+  <!-- adapt -->
+  <rect class="b" x="280" y="180" width="140" height="60" rx="6" stroke="#a8451f"/>
+  <text class="t" x="350" y="208" text-anchor="middle">metrics adapt</text>
+  <text class="l" x="350" y="225" text-anchor="middle">→ performance.v1</text>
+
+  <!-- calibrate -->
+  <rect class="b" x="40" y="180" width="140" height="60" rx="6" stroke="#a8451f"/>
+  <text class="t" x="110" y="208" text-anchor="middle">metrics calibrate</text>
+  <text class="l" x="110" y="225" text-anchor="middle">→ calibration</text>
+
+  <!-- arrows -->
+  <path class="a" d="M180 80 L 278 80" marker-end="url(#arr2)"/>
+  <path class="a" d="M420 80 L 518 80" marker-end="url(#arr2)"/>
+  <path class="a" d="M350 110 L 350 178" marker-end="url(#arr2)"/>
+  <path class="a" d="M590 110 Q 590 145 350 178" marker-end="url(#arr2)" fill="none"/>
+  <path class="a" d="M280 210 L 182 210" marker-end="url(#arr2)"/>
+  <path class="a" d="M110 180 Q 110 145 110 110" marker-end="url(#arr2)" fill="none"/>
+
+  <text class="l" x="110" y="280" text-anchor="middle">next run's forecast uses calibration</text>
+  <text class="l" x="110" y="296" text-anchor="middle">(priors updated)</text>
+</svg>
+</div>
+
+<h2>The Shepherd Boy Farms example</h2>
+
+<h3>The sidecar (what you'd give it from real-world data)</h3>
+<div class="pre">{
+  <span class="k">"run_id"</span>: <span class="s">"sbf.run.2026-05-12.001"</span>,
+  <span class="k">"window"</span>: <span class="s">"7d-post-publish"</span>,
+  <span class="k">"by_platform"</span>: {
+    <span class="k">"twitter"</span>:  { <span class="k">"likes"</span>: 287,  <span class="k">"reposts"</span>: 14, <span class="k">"replies"</span>: 22, <span class="k">"impressions"</span>: 9100 },
+    <span class="k">"linkedin"</span>: { <span class="k">"likes"</span>: 96,   <span class="k">"reposts"</span>: 4,  <span class="k">"replies"</span>: 8,  <span class="k">"impressions"</span>: 2300 }
+  }
+}</div>
+
+<h3>The adapt command</h3>
+<div class="pre"><span class="c">$ uv run agentcy metrics adapt \</span>
+    --run-result <span class="v">brands/shepherdboyfarms/output/runs/sbf.run.2026-05-12.001.json</span> \
+    --sidecar    <span class="v">engagement.json</span> \
+    --json</div>
+
+<h3>What comes out — performance.v1.json</h3>
+<p>Strict, narrow schema. The CLAUDE.md note on this one is unusual:</p>
+<div class="callout" style="font-style:italic">
+  "This first slice is intentionally limited to aggregate performance snapshots for published social.post outcomes only and excludes tokens, secrets, auth material, audience-level data, and user-level PII."
+</div>
+<p>That's a deliberate scope cut — it would have been easy to also include per-user analytics, but the schema author explicitly bounded it to aggregate-only. That's a thoughtful privacy/scope decision baked into the contract.</p>
+
+<div class="pre">{
+  <span class="k">"artifact_type"</span>: <span class="s">"performance.v1"</span>,
+  <span class="k">"performance_id"</span>: <span class="s">"sbf.perf.2026-05-19.001"</span>,
+  <span class="k">"run_id"</span>:        <span class="s">"sbf.run.2026-05-12.001"</span>,
+  <span class="k">"brief_id"</span>:      <span class="s">"sbf.brief.2026-05-12.001"</span>,
+  <span class="k">"brand_id"</span>:      <span class="s">"shepherdboyfarms"</span>,
+  <span class="k">"writer"</span>: { <span class="k">"repo"</span>: <span class="s">"cli-metrics"</span>, <span class="k">"module"</span>: <span class="s">"agentcy-pulse"</span> },
+  <span class="k">"workflow"</span>:    <span class="s">"social.post"</span>,
+  <span class="k">"measured_at"</span>: <span class="s">"2026-05-19T19:00:00Z"</span>,
+  <span class="k">"window"</span>:      <span class="s">"7d-post-publish"</span>,
+
+  <span class="k">"observations"</span>: [
+    {
+      <span class="k">"platform"</span>:  <span class="s">"twitter"</span>,
+      <span class="k">"engagement"</span>: { <span class="k">"likes"</span>: 287, <span class="k">"reposts"</span>: 14, <span class="k">"replies"</span>: 22 },
+      <span class="k">"impressions"</span>: 9100,
+      <span class="k">"engagement_rate"</span>: <span class="v">0.0354</span>
+    },
+    {
+      <span class="k">"platform"</span>:  <span class="s">"linkedin"</span>,
+      <span class="k">"engagement"</span>: { <span class="k">"likes"</span>: 96, <span class="k">"reposts"</span>: 4, <span class="k">"replies"</span>: 8 },
+      <span class="k">"impressions"</span>: 2300,
+      <span class="k">"engagement_rate"</span>: <span class="v">0.0470</span>
+    }
+  ],
+
+  <span class="k">"lineage"</span>: {
+    <span class="k">"source_voice_pack_id"</span>: <span class="s">"ashton.voice.default.v1"</span>,
+    <span class="k">"campaign_id"</span>:           <span class="s">"sbf.camp.raw-vs-kibble.2026Q2"</span>
+  }
+}</div>
+
+<h3>The calibrate command</h3>
+<div class="pre"><span class="c">$ uv run agentcy metrics calibrate \</span>
+    --forecast    <span class="v">brands/shepherdboyfarms/output/forecasts/sbf.fc.2026-05-12.001.json</span> \
+    --performance <span class="v">brands/shepherdboyfarms/output/perf/sbf.perf.2026-05-19.001.json</span> \
+    --json</div>
+
+<p>Output: a calibration record showing which forecasted scenario was closest to reality, by how much, and what to update. Next time you run a forecast for this brand, those priors get pulled in.</p>
+
+<h2>What's in the folder — just 6 Python files</h2>
+<table>
+<thead><tr><th>File</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td class="f">cli.py</td><td>Two commands: <code>adapt</code> and <code>calibrate</code></td></tr>
+<tr><td class="f">adapter.py</td><td>The adapt logic — read run_result + sidecar, output performance.v1</td></tr>
+<tr><td class="f">calibrator.py</td><td>The calibrate logic — diff forecast vs realized, emit calibration</td></tr>
+<tr><td class="f">models.py</td><td>Pydantic types matching the schemas</td></tr>
+<tr><td class="f">__init__.py</td><td>Public API exported for direct Python import</td></tr>
+</tbody>
+</table>
+
+<h2>Why this small module is the most important one</h2>
+
+<p><b>It's the gradient signal.</b> Without metrics, the forecast module is making predictions into a void — there's no way to know if it's getting better or worse. With metrics, every cycle produces a measured outcome that updates priors. The whole suite becomes self-improving rather than self-reinforcing.</p>
+
+<p><b>It's also the cheapest module to audit.</b> 6 files. ~3 test files. You can read the entire module in 20 minutes. If the design here is sloppy, the whole loop is unreliable. If it's clean, the suite has a real feedback channel. (Spoiler: it's clean. Strict schemas, explicit privacy scope, no PII.)</p>
+
+<p><b>The CLAUDE.md scope note is a quality signal.</b> The comment about excluding tokens/auth/PII isn't there by accident — someone thought hard about what should NOT be in this artifact. That's the kind of restraint that's rare in AI repos, which usually pile features into every module until the schemas drift.</p>
+
+<div class="callout">
+  <b>The bottom line:</b> if a creative-AI repo you're evaluating has nothing equivalent to this — no module that compares predicted vs. realized — then it's a generator, not a learning system. They might look similar in a demo, but they diverge sharply over time. This is the single most important module to look for when judging depth.
+</div>
+
+<div class="nav">
+  <a href="module-studio.html">← studio</a>
+  <a href="workflows.html">overview ↑</a>
+</div>
+
+</div>
+</body>
+</html>

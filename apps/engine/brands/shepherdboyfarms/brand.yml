@@ -1,0 +1,122 @@
+name: Shepherd Boy Farms
+industry: pet food
+description: |
+  Family-owned Indiana farm making freeze-dried raw food, treats, and goat milk
+  supplements for dogs and cats. Single-ingredient, made in USA, farm-to-bowl.
+
+target_audience:
+  primary: raw-curious dog owners ready to leave kibble
+  secondary: premium pet parents, active trainers, raw feeders
+  pain_points:
+    - dog allergies and skin issues
+    - kibble ingredient quality concerns
+    - finding clean treats for training
+    - sensitive stomachs and picky eaters
+
+# Words/phrases that boost relevance when found in signals.
+# NOTE: relevance scorer uses exact substring + denominator-of-all-keywords,
+# so include the brand name and a few common-but-narrow phrases. Avoid bloat.
+keywords:
+  - Shepherd Boy Farms
+  - shepherdboyfarms
+  - freeze-dried dog food
+  - freeze dried raw
+  - raw dog food
+  - single ingredient treat
+  - single ingredient training treat
+  - goat milk for dogs
+  - dog allergies
+  - kibble alternative
+  - raw feeding
+  - made in USA pet food
+  - beef heart treat
+  - beef liver treat
+  - freeze dried treats
+  - farm to bowl
+  - dehydrated vs freeze dried
+
+# Competitors we want to track for positioning + competitive intel
+competitors:
+  - Stella & Chewy's
+  - Primal Pet Foods
+  - Vital Essentials
+  - Open Farm
+  - Sojos
+  - Ziwi Peak
+  - Instinct
+  - K9 Natural
+  - Northwest Naturals
+  - The Honest Kitchen
+  - Steve's Real Food
+  - Tucker's Raw Frozen
+  - Bones & Co
+  - Small Batch
+  - Allprovide
+
+# Stop-phrases — exclude signals that contain these (false positives)
+stop_phrases:
+  # "shepherd boy" matches biblical / jewelry / unrelated content
+  - shepherd boy david
+  - biblical shepherd boy
+  - shepherd boy figurine
+  - shepherd boy lyrics
+  # freeze-dried gets used in human food contexts a lot
+  - freeze dried fruit for humans
+  - freeze dried strawberries
+  - freeze dried candy
+  - freeze dried ice cream
+  - astronaut ice cream
+  - emergency food storage
+  # lyophilization in pharma / biotech
+  - lyophilization pharmaceutical
+  - vaccine lyophilization
+
+# Subreddits to monitor (run `signals discover-subreddits --brand shepherdboyfarms` to expand)
+subreddits:
+  - dogs
+  - dogfood
+  - rawpetfood
+  - puppy101
+  - dogtraining
+  - Pets
+  - AskVet
+  - DOG
+  - germanshepherds
+  - Dachshund
+  - reactivedogs
+  - DogAdvice
+
+# RSS feeds for industry + product news
+feeds:
+  - https://www.petfoodindustry.com/rss/articles.xml
+  - https://www.akc.org/feed/
+  - https://www.dogfoodadvisor.com/feed/
+  - https://www.fda.gov/AnimalVeterinary/SafetyHealth/RecallsWithdrawals/RSS.xml
+  - https://truthaboutpetfood.com/feed/
+
+# Topics that should trigger immediate intel deep-dive (not just signal collection)
+priority_topics:
+  - pet food recall
+  - kibble recall
+  - AAFCO labeling
+  - dog allergy outbreak
+  - raw food regulation
+  - made in USA pet food labeling
+
+# Policy notes for autonomous publishing (placeholder — refine before enabling loop)
+policy:
+  autonomous:
+    - educational_content_about_freeze_drying
+    - farm_behind_the_scenes_posts
+    - amplifying_verified_customer_reviews
+    - single_ingredient_education
+  escalate:
+    - any_health_or_medical_claim
+    - response_to_competitor_callouts
+    - response_to_recall_news
+    - allergy_or_diet_advice_replies
+    - price_promotion_changes
+  deny:
+    - therapeutic_claims
+    - veterinary_diagnosis
+    - guaranteeing_health_outcomes

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>studio — agentcy module 4</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#fbf6e9;--paper:#fffaef;--ink:#1c1a14;--dim:#76705e;--line:#e3dcc4;--accent:#3a6b48;--mono:ui-monospace,"SF Mono",Menlo,monospace;--serif:"Iowan Old Style",Palatino,Georgia,serif;--sans:-apple-system,"Inter",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  .wrap{max-width:880px;margin:0 auto;padding:36px 28px 120px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;font:12px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .top a{color:var(--accent);text-decoration:none}
+  .top .step{background:var(--accent);color:#fff;padding:4px 10px;border-radius:999px}
+  h1{font:600 44px/1.1 var(--serif);letter-spacing:-.01em;margin:0 0 8px;color:var(--accent)}
+  .role{font-size:19px;color:var(--dim);margin:0 0 36px;max-width:680px}
+  h2{font:600 24px/1.2 var(--serif);margin:48px 0 12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h3{font:600 13px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:20px 0 8px}
+  p{margin:0 0 12px;max-width:680px}
+  code{font:13px var(--mono);background:#e8eee5;padding:2px 6px;border-radius:4px;color:var(--accent)}
+  .pre{background:var(--paper);border:1px solid var(--line);padding:14px 18px;border-radius:6px;font:12.5px/1.55 var(--mono);overflow-x:auto;margin:14px 0;white-space:pre}
+  .pre .c{color:var(--dim)} .pre .k{color:var(--accent)} .pre .v{color:#8a5a1b} .pre .s{color:#a8451f}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  table th,table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  table th{font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+  table td.f{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
+  .nav{margin-top:48px;display:flex;justify-content:space-between;font:13px var(--sans);padding-top:18px;border-top:1px solid var(--line)}
+  .nav a{color:var(--accent);text-decoration:none}
+  .callout{background:#e0eadc;border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0;font-size:14.5px}
+  .stack{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:18px 0}
+  .stack .col{background:var(--paper);border:1px solid var(--line);padding:14px 16px;border-radius:6px}
+  .stack .col h4{margin:0 0 8px;font:600 13px var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+  .stack .col ul{margin:0;padding-left:18px;font-size:13px}
+  .stack .col li{margin-bottom:4px}
+  .stack .col code{font-size:12px;background:transparent;padding:0;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a href="module-forecast.html">← forecast</a>
+  <span class="step">step 4 of 5</span>
+  <a href="module-metrics.html">next: metrics →</a>
+</div>
+
+<h1>studio</h1>
+<p class="role">The only TypeScript module. Takes the brief, renders the actual image or video, drafts copy, and publishes directly to social platforms. SQLite-backed run engine. Remotion for video.</p>
+
+<h2>What it actually does</h2>
+<p>Studio is where the suite stops thinking and starts producing files and HTTP requests. Three responsibilities:</p>
+<ol style="max-width:680px;font-size:15px;line-height:1.7">
+  <li><b>Generate</b> — LLM writes copy + selects assets based on the brief's creative direction.</li>
+  <li><b>Render</b> — produces actual PNG/MP4 files from the brand's design tokens. Images via Gemini + custom social/card compositors. Video via Remotion (React-for-video).</li>
+  <li><b>Publish</b> — pushes the rendered post to Twitter, LinkedIn, Facebook, Threads, or Meta's Graph API, using direct adapters (no Buffer/Hootsuite middleware).</li>
+</ol>
+<p>The whole thing runs on a SQLite-backed engine. Every run is a row; every step within a run is a row. You can replay, resume, or roll back.</p>
+
+<div class="callout">
+  <b>Why TypeScript here:</b> rendering is a Node/browser problem (canvas, Remotion, sharp), and the publish APIs all have first-class JS SDKs. Splitting at this seam keeps the "think" side (Python LLMs, graphs, simulations) clean and the "ship" side (file system, image bytes, HTTP) idiomatic.
+</div>
+
+<h2>The folder structure — 47 TypeScript files</h2>
+
+<div class="stack">
+  <div class="col">
+    <h4>brands/ (2 files)</h4>
+    <ul>
+      <li>Parses <code>brand.md</code> + <code>design.md</code> from <code>brands/&lt;id&gt;/</code></li>
+      <li>Validates frontmatter against the runtime schema</li>
+      <li>This is the bridge between human-edited markdown and machine-consumed objects</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>generate/ (3 files)</h4>
+    <ul>
+      <li>LLM pipeline that drafts post copy from the brief</li>
+      <li>Picks format (standard, comparison, BTS, quote-card)</li>
+      <li>Generates the image prompt from <code>design.md</code>'s template</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>render/ (7 files)</h4>
+    <ul>
+      <li><code>social.ts</code> — composes a social image with text overlay</li>
+      <li><code>card.ts</code> — quote-card or hero-stat treatments</li>
+      <li><code>gemini.ts</code> — Gemini image gen integration</li>
+      <li><code>dither.ts</code>, <code>colors.ts</code>, <code>fonts.ts</code> — helpers</li>
+      <li><code>video/</code> — Remotion compositions for motion content</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>publish/ (7 files)</h4>
+    <ul>
+      <li><code>twitter-direct.ts</code> — direct Twitter API v2</li>
+      <li><code>linkedin-direct.ts</code> — direct LinkedIn UGC API</li>
+      <li><code>facebook-direct.ts</code> — direct Pages API</li>
+      <li><code>meta-graph.ts</code> — Meta Graph API (Threads, Instagram)</li>
+      <li><code>social.ts</code> — adapter dispatch by platform</li>
+      <li><code>rate-limit.ts</code> — per-platform rate limiter</li>
+      <li><code>base.ts</code> — abstract adapter contract</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>runtime/ (4 files)</h4>
+    <ul>
+      <li>SQLite engine — runs, steps, artifacts, status</li>
+      <li>Workflow registry — <code>social.post</code>, <code>video.post</code>, etc.</li>
+      <li>Step persistence — every state transition recorded</li>
+      <li>Resume + replay semantics</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>commands/ (9 files), cli/ (2)</h4>
+    <ul>
+      <li>CLI surface: <code>run</code>, <code>draft</code>, <code>render</code>, <code>publish</code>, <code>queue</code>, <code>replay</code>, <code>status</code>, <code>brands</code></li>
+      <li>Maps to <code>agentcy studio &lt;cmd&gt;</code> through the wrapper</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>core/ (6 files)</h4>
+    <ul>
+      <li>Shared types, config loading, error handling</li>
+      <li>The protocol artifact reader (run_result.v1 writer)</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>lab/ (2 files), domain/ (3)</h4>
+    <ul>
+      <li>Experimentation harness for testing new render styles</li>
+      <li>Domain types (Post, Asset, Schedule)</li>
+    </ul>
+  </div>
+</div>
+
+<h2>The Shepherd Boy Farms example</h2>
+
+<h3>Command</h3>
+<div class="pre"><span class="c">$ uv run agentcy studio run social.post \</span>
+    --brand <span class="v">shepherdboyfarms</span> \
+    --brief-file <span class="v">brands/shepherdboyfarms/output/briefs/sbf.brief.2026-05-12.001.json</span> \
+    --json</div>
+
+<h3>What happens internally</h3>
+<div class="pre"><span class="c">step 01</span>  load brand → brands/shepherdboyfarms/{brand,design}.md  →  ✓
+<span class="c">step 02</span>  load voice_pack → input/voice_pack.v1.json            →  ✓
+<span class="c">step 03</span>  generate copy (LLM, using Ashton's voice)              →  ✓
+<span class="c">step 04</span>  generate image prompt from design.md template          →  ✓
+<span class="c">step 05</span>  render image via Gemini → output/renders/post-001.png  →  ✓
+<span class="c">step 06</span>  publish.twitter-direct                                 →  posted (id: 1234...)
+<span class="c">step 07</span>  publish.linkedin-direct                                →  posted (id: 5678...)
+<span class="c">step 08</span>  write run_result.v1 → output/runs/sbf.run.2026-05-12.001.json  →  ✓</div>
+
+<h3>The output — run_result.v1.json</h3>
+<p>The largest schema (215 lines). Required: <code>artifact_type, run_id, brief_id, brand_id, writer, workflow, status, started_at, completed_at</code>. Optional: <code>review, delivery, current_step, parent_run_id</code>.</p>
+
+<div class="pre">{
+  <span class="k">"artifact_type"</span>: <span class="s">"run_result.v1"</span>,
+  <span class="k">"run_id"</span>:    <span class="s">"sbf.run.2026-05-12.001"</span>,
+  <span class="k">"brief_id"</span>:  <span class="s">"sbf.brief.2026-05-12.001"</span>,
+  <span class="k">"brand_id"</span>:  <span class="s">"shepherdboyfarms"</span>,
+  <span class="k">"writer"</span>: { <span class="k">"repo"</span>: <span class="s">"cli-phantom"</span>, <span class="k">"module"</span>: <span class="s">"agentcy-loom"</span> },
+  <span class="k">"workflow"</span>:     <span class="s">"social.post"</span>,
+  <span class="k">"status"</span>:       <span class="s">"published"</span>,
+  <span class="k">"started_at"</span>:   <span class="s">"2026-05-12T19:42:18Z"</span>,
+  <span class="k">"completed_at"</span>: <span class="s">"2026-05-12T19:43:51Z"</span>,
+  <span class="k">"current_step"</span>: <span class="s">"done"</span>,
+
+  <span class="k">"review"</span>: {
+    <span class="k">"decision"</span>: <span class="s">"approved"</span>,
+    <span class="k">"summary"</span>:  <span class="s">"Auto-approved by policy gate; voice drift 0.08 (below 0.15 threshold)"</span>
+  },
+
+  <span class="k">"delivery"</span>: {
+    <span class="k">"twitter"</span>:  { <span class="k">"post_id"</span>: <span class="s">"1234..."</span>, <span class="k">"posted_at"</span>: <span class="s">"..."</span> },
+    <span class="k">"linkedin"</span>: { <span class="k">"post_id"</span>: <span class="s">"5678..."</span>, <span class="k">"posted_at"</span>: <span class="s">"..."</span> }
+  }
+}</div>
+
+<h2>The interesting design choices</h2>
+
+<p><b>Direct adapters, not aggregators.</b> Most "post to social" tools route through Buffer, Hootsuite, or Zapier. Studio talks directly to each platform's API. That's more work (5 adapters to maintain) but gives you control over scheduling, rate limits, and error handling, and avoids paying for a middleman.</p>
+
+<p><b>Remotion for video.</b> Video isn't an afterthought — it's a first-class workflow with React-based compositions in <code>render/video/</code>. The same brand design tokens drive both image and video, so a post looks consistent across formats.</p>
+
+<p><b>SQLite is the right call.</b> Every run + every step is a row. No need for Postgres for a CLI app, but you get full replay, resume, and audit for free. Most workflow systems either log to stdout (lost) or require a cloud DB (overkill).</p>
+
+<p><b>The workflow registry.</b> <code>social.post</code> is just one workflow. You could add <code>video.post</code>, <code>email.send</code>, <code>blog.publish</code>, each as a TypeScript file that defines its steps. The runtime engine doesn't care what the workflow is — it just executes steps and records state.</p>
+
+<h2>What to grep for if you're auditing</h2>
+<table>
+<thead><tr><th>Question</th><th>Where to look</th></tr></thead>
+<tbody>
+<tr><td>How does it know which brand?</td><td><code>src/studio/runtime/src/brands/</code> — loads <code>brand.md</code> + <code>design.md</code> by id</td></tr>
+<tr><td>How does it generate the image prompt?</td><td><code>generate/</code> — interpolates <code>[SUBJECT]</code> into the design.md template</td></tr>
+<tr><td>Where's the rate limiter?</td><td><code>publish/rate-limit.ts</code> — per-platform sliding window</td></tr>
+<tr><td>How does replay work?</td><td><code>runtime/</code> — reads the SQLite step log, re-runs from the failed step</td></tr>
+<tr><td>What's the workflow contract?</td><td><code>core/</code> — Workflow type with steps[], inputs, outputs</td></tr>
+</tbody>
+</table>
+
+<div class="nav">
+  <a href="module-forecast.html">← forecast</a>
+  <a href="module-metrics.html">next: metrics →</a>
+</div>
+
+</div>
+</body>
+</html>

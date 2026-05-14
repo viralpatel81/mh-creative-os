@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>brand — agentcy module 2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#fbf6e9;--paper:#fffaef;--ink:#1c1a14;--dim:#76705e;--line:#e3dcc4;--accent:#8a5a1b;--green:#3a6b48;--mono:ui-monospace,"SF Mono",Menlo,monospace;--serif:"Iowan Old Style",Palatino,Georgia,serif;--sans:-apple-system,"Inter",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  .wrap{max-width:880px;margin:0 auto;padding:36px 28px 120px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;font:12px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .top a{color:var(--accent);text-decoration:none}
+  .top .step{background:var(--accent);color:#fff;padding:4px 10px;border-radius:999px}
+  h1{font:600 44px/1.1 var(--serif);letter-spacing:-.01em;margin:0 0 8px;color:var(--accent)}
+  .role{font-size:19px;color:var(--dim);margin:0 0 36px;max-width:680px}
+  h2{font:600 24px/1.2 var(--serif);margin:48px 0 12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h3{font:600 13px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:20px 0 8px}
+  p{margin:0 0 12px;max-width:680px}
+  code{font:13px var(--mono);background:#f1ead2;padding:2px 6px;border-radius:4px;color:var(--accent)}
+  .pre{background:var(--paper);border:1px solid var(--line);padding:14px 18px;border-radius:6px;font:12.5px/1.55 var(--mono);overflow-x:auto;margin:14px 0;white-space:pre}
+  .pre .c{color:var(--dim)} .pre .k{color:var(--accent)} .pre .v{color:var(--green)} .pre .s{color:#a8451f}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  table th,table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  table th{font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+  table td.f{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
+  .nav{margin-top:48px;display:flex;justify-content:space-between;font:13px var(--sans);padding-top:18px;border-top:1px solid var(--line)}
+  .nav a{color:var(--accent);text-decoration:none}
+  .callout{background:#efe5cf;border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0;font-size:14.5px}
+  .warn{background:#f5e3d4;border-left:3px solid #a8451f;padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0;font-size:14.5px}
+  .warn b{color:#a8451f}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+  .grid .sub{background:var(--paper);border:1px solid var(--line);padding:10px 12px;border-radius:5px;font:12px var(--mono)}
+  .grid .sub b{color:var(--accent);display:block;margin-bottom:2px}
+  .grid .sub span{color:var(--dim);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a href="module-persona.html">← persona</a>
+  <span class="step">step 2 of 5</span>
+  <a href="module-forecast.html">next: forecast →</a>
+</div>
+
+<h1>brand</h1>
+<p class="role">Given a brand definition and a topic, write a structured campaign brief. This is the largest, most sprawling module — it owns brand identity, planning, production, publishing, monitoring, and an autonomous loop.</p>
+
+<h2>What it actually does</h2>
+<p>The core flow: read <code>brands/&lt;id&gt;/brand.md</code> (identity, audiences, pillars, voice), read <code>voice_pack.v1.json</code> (the persona), take a topic from the user, and produce a <code>brief.v1.json</code> that contains: an objective, a signal (what's the input), a strategy (angle + CTA + platforms), policy (safety rails), and creative direction.</p>
+
+<p>Around that core, the module also includes everything for autonomous operation: signal monitoring, content production, publishing queue, brand drift monitoring, decision logging, policy engine, and a self-running loop with a learning metric.</p>
+
+<div class="warn">
+  <b>Heads up:</b> this module is large — 112 Python files, 17 sub-CLIs. There is real risk of internal sprawl. For example, <code>src/agentcy/brand/persona/</code> exists alongside the top-level <code>persona</code> module. When auditing this repo for quality, brand is where you'll find both the strongest engineering and the most accumulated complexity.
+</div>
+
+<h2>The Shepherd Boy Farms example</h2>
+
+<h3>What's already on disk (we made these in chat)</h3>
+<div class="pre">brands/shepherdboyfarms/
+├── brand.md           <span class="c"># identity, voice, audiences, pillars, channels</span>
+├── design.md          <span class="c"># palette, typography, image prompts</span>
+├── input/
+│   └── voice_pack.v1.json    <span class="c"># Ashton, exported from persona module</span>
+├── assets/            <span class="c"># logo, fonts (empty so far)</span>
+└── output/            <span class="c"># rendered media + run results (gitignored)</span></div>
+
+<h3>brand.md — a snippet</h3>
+<div class="pre"><span class="c">---</span>
+<span class="k">id</span>: shepherdboyfarms
+<span class="k">name</span>: Shepherd Boy Farms
+<span class="k">positioning</span>: A family-owned Indiana meat farm making single-ingredient,
+  freeze-dried raw food and treats — farm-to-bowl nutrition without fillers...
+<span class="k">audiences</span>:
+  - <span class="k">id</span>: raw-curious
+    <span class="k">summary</span>: Dog owners convinced kibble is the problem...
+  - <span class="k">id</span>: premium-pet-parent
+    ...
+<span class="k">pillars</span>:
+  - <span class="k">id</span>: raw-vs-kibble
+    <span class="k">perspective</span>: <span class="s">"Kibble is the default, not the answer..."</span>
+    <span class="k">signals</span>: [kibble recall news, AAFCO claims, ...]
+    <span class="k">format</span>: comparison
+    <span class="k">frequency</span>: weekly
+  - <span class="k">id</span>: farm-to-bowl
+    ...
+<span class="c">---</span></div>
+
+<h3>The command</h3>
+<div class="pre"><span class="c">$ uv run agentcy brand plan run \</span>
+    <span class="v">"freeze-dried vs kibble — go after raw-curious dog owners"</span> \
+    --brand <span class="v">shepherdboyfarms</span> \
+    --json</div>
+
+<h3>What comes out — brief.v1.json (the schema)</h3>
+<p>11 required fields, strict — extras rejected. This is the contract every downstream module reads.</p>
+
+<div class="pre">{
+  <span class="k">"artifact_type"</span>: <span class="s">"brief.v1"</span>,
+  <span class="k">"schema_version"</span>: <span class="s">"v1"</span>,
+  <span class="k">"brief_id"</span>: <span class="s">"sbf.brief.2026-05-12.001"</span>,
+  <span class="k">"brand_id"</span>: <span class="s">"shepherdboyfarms"</span>,
+  <span class="k">"voice_pack_id"</span>: <span class="s">"ashton.voice.default.v1"</span>,
+  <span class="k">"writer"</span>: { <span class="k">"repo"</span>: <span class="s">"brand-os"</span>, <span class="k">"module"</span>: <span class="s">"agentcy-compass"</span> },
+
+  <span class="k">"objective"</span>: <span class="s">"Convert raw-curious dog owners away from kibble"</span>,
+  <span class="k">"signal"</span>: {
+    <span class="k">"source"</span>: <span class="s">"pillar:raw-vs-kibble"</span>,
+    <span class="k">"summary"</span>: <span class="s">"Owners suspect kibble causes allergies + dull coats"</span>,
+    <span class="k">"evidence"</span>: [ ... ]
+  },
+  <span class="k">"strategy"</span>: {
+    <span class="k">"angle"</span>:     <span class="s">"96% nutrient retention vs kibble's processing loss"</span>,
+    <span class="k">"cta"</span>:       <span class="s">"Subscribe with GOAT15 for 15% off first order"</span>,
+    <span class="k">"platforms"</span>: [<span class="s">"instagram"</span>, <span class="s">"tiktok"</span>, <span class="s">"facebook"</span>]
+  },
+  <span class="k">"policy"</span>: { ... safety constraints ... },
+  <span class="k">"creative"</span>: { ... format hints, image prompts ... }
+}</div>
+
+<h2>What's in the folder — all 17 sub-modules</h2>
+
+<div class="grid">
+  <div class="sub"><b>signals</b><span>monitor channels for inputs</span></div>
+  <div class="sub"><b>intel</b><span>gather + analyze intel</span></div>
+  <div class="sub"><b>plan</b><span>brief.v1 generation core</span></div>
+  <div class="sub"><b>produce</b><span>content drafting</span></div>
+  <div class="sub"><b>eval</b><span>score drafts against rubric</span></div>
+  <div class="sub"><b>publish</b><span>route to channels</span></div>
+  <div class="sub"><b>queue</b><span>publish queue mgmt</span></div>
+  <div class="sub"><b>monitor</b><span>brand drift, mentions</span></div>
+  <div class="sub"><b>loop</b><span>autonomous self-running</span></div>
+  <div class="sub"><b>decision</b><span>decision log for the loop</span></div>
+  <div class="sub"><b>policy</b><span>safety/guardrail config</span></div>
+  <div class="sub"><b>learn</b><span>self-improvement metrics</span></div>
+  <div class="sub"><b>brand</b><span>brand identity CRUD</span></div>
+  <div class="sub"><b>config</b><span>module configuration</span></div>
+  <div class="sub"><b>agents/</b><span>market + threat subagents</span></div>
+  <div class="sub"><b>workflows/</b><span>approval workflows</span></div>
+  <div class="sub"><b>server/</b><span>HTTP surface (optional)</span></div>
+</div>
+
+<h3>The most interesting files</h3>
+<table>
+<thead><tr><th>File</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td class="f">brand/plan/stages/</td><td>The brief generation runs as a pipeline of stages — discoverable, replayable, persisted in a store</td></tr>
+<tr><td class="f">brand/plan/store.py</td><td>Persistent storage for plans (you can replay any prior brief)</td></tr>
+<tr><td class="f">brand/agents/market.py</td><td>Market-research subagent (researches competitors, trends)</td></tr>
+<tr><td class="f">brand/agents/threat.py</td><td>Threat subagent (scans for brand risks before publishing)</td></tr>
+<tr><td class="f">brand/loop.py + loop_cli.py</td><td>Autonomous self-running loop — picks signals, plans, drafts, decides whether to publish</td></tr>
+<tr><td class="f">brand/monitor/</td><td>Watches for brand drift across published content</td></tr>
+<tr><td class="f">brand/workflows/approval.py</td><td>Human-in-the-loop approval flow before publish</td></tr>
+</tbody>
+</table>
+
+<h2>Why this module's design matters</h2>
+<p><b>The brief.v1 schema is the spine.</b> Everything brand produces gets normalized into one artifact. Forecast and studio don't need to understand brand internals — they just read the JSON. That's how brand can be 112 files of complexity without poisoning the rest of the suite.</p>
+
+<p><b>The autonomous loop is more than a cron.</b> It maintains a decision log, learning metrics, and policy gates. When it runs, you can audit every choice it made. Most "AI agent" systems pretend autonomy by hiding state; this one persists it.</p>
+
+<p><b>Subagents over a monolith.</b> Market analysis and threat scanning live as separate agents with a base class. You can add a third (e.g., a "compliance" agent) by subclassing — no rewrite needed.</p>
+
+<div class="callout">
+  <b>How to read the size:</b> 112 files sounds like sprawl, but most are small (CLI commands, schema definitions, store accessors). The actual logic is concentrated in <code>plan/stages/</code>, <code>agents/</code>, and <code>loop.py</code>. The rest is plumbing for a CLI-first interface — which is exactly what makes the suite scriptable.
+</div>
+
+<div class="nav">
+  <a href="module-persona.html">← persona</a>
+  <a href="module-forecast.html">next: forecast →</a>
+</div>
+
+</div>
+</body>
+</html>

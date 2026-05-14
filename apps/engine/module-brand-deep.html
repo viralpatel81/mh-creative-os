@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>brand module — what's actually in those 112 files</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#fbf6e9;--paper:#fffaef;--ink:#1c1a14;--dim:#76705e;--line:#e3dcc4;--accent:#8a5a1b;--mono:ui-monospace,"SF Mono",Menlo,monospace;--serif:"Iowan Old Style",Palatino,Georgia,serif;--sans:-apple-system,"Inter",system-ui,sans-serif;
+    --foundation:#6a4c93;--input:#2c5e7e;--core:#a8451f;--ops:#3a6b48}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  .wrap{max-width:920px;margin:0 auto;padding:36px 28px 120px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;font:12px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .top a{color:var(--accent);text-decoration:none}
+  h1{font:600 44px/1.1 var(--serif);letter-spacing:-.01em;margin:0 0 8px;color:var(--accent)}
+  .role{font-size:19px;color:var(--dim);margin:0 0 36px;max-width:720px}
+  h2{font:600 28px/1.2 var(--serif);margin:56px 0 14px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h3{font:600 22px/1.3 var(--serif);margin:24px 0 8px}
+  h4{font:600 13px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:18px 0 8px}
+  p{margin:0 0 12px;max-width:720px}
+  code{font:13px var(--mono);background:#f1ead2;padding:2px 6px;border-radius:4px;color:var(--accent)}
+  .pre{background:var(--paper);border:1px solid var(--line);padding:14px 18px;border-radius:6px;font:12.5px/1.55 var(--mono);overflow-x:auto;margin:14px 0;white-space:pre}
+  .pre .c{color:var(--dim)} .pre .k{color:var(--accent)} .pre .v{color:#3a6b48}
+
+  /* group sections */
+  .group{margin:36px 0;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:24px 28px;border-left:5px solid var(--accent)}
+  .group.foundation{border-left-color:var(--foundation)}
+  .group.input{border-left-color:var(--input)}
+  .group.core{border-left-color:var(--core)}
+  .group.ops{border-left-color:var(--ops)}
+  .group .gtag{display:inline-block;font:11px var(--mono);text-transform:uppercase;letter-spacing:.1em;padding:3px 10px;border-radius:999px;color:#fff;margin-bottom:8px}
+  .group.foundation .gtag{background:var(--foundation)}
+  .group.input .gtag{background:var(--input)}
+  .group.core .gtag{background:var(--core)}
+  .group.ops .gtag{background:var(--ops)}
+  .group h2{margin:0 0 6px;border:none;padding:0;font-size:24px}
+  .group .gintro{color:var(--dim);font-size:14.5px;margin-bottom:18px;max-width:760px}
+
+  /* capability cards */
+  .cap{padding:18px 0;border-bottom:1px dashed var(--line)}
+  .cap:last-child{border-bottom:none}
+  .cap .header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .cap .name{font:600 19px var(--serif);color:var(--ink)}
+  .cap .path{font:12px var(--mono);color:var(--dim)}
+  .cap .one{font-size:15px;margin:6px 0 10px;color:var(--ink)}
+  .cap .what{margin:8px 0 0;font-size:14px;color:var(--ink);max-width:760px}
+  .cap .what b{color:var(--accent)}
+  .cap .files{margin-top:10px;font:12px var(--mono);color:var(--dim);background:var(--bg);padding:8px 12px;border-radius:5px}
+  .cap .files b{color:var(--accent)}
+  .cap .io{display:flex;gap:24px;margin-top:10px;font:12px var(--mono);color:var(--dim);flex-wrap:wrap}
+  .cap .io .in b, .cap .io .out b{color:var(--accent)}
+  .cap .io .arrow{color:var(--ink);font-weight:600}
+
+  /* flow diagram */
+  .flow{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:22px;margin:18px 0}
+  .flow svg{width:100%;height:auto}
+
+  /* callouts */
+  .callout{background:#efe5cf;border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0;font-size:14.5px;max-width:760px}
+  .callout b{color:var(--accent)}
+
+  .nav{margin-top:48px;display:flex;justify-content:space-between;font:13px var(--sans);padding-top:18px;border-top:1px solid var(--line)}
+  .nav a{color:var(--accent);text-decoration:none}
+
+  .toc{background:var(--paper);border:1px solid var(--line);padding:18px 22px;border-radius:8px;margin:18px 0}
+  .toc h4{margin-top:0}
+  .toc ol{margin:6px 0 0;padding-left:22px;font-size:14px}
+  .toc a{color:var(--accent);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a href="module-brand.html">← back to brand overview</a>
+  <a href="workflows.html">all modules</a>
+</div>
+
+<h1>brand — the 112 files, decoded</h1>
+<p class="role">
+  Brand has one job: take a brand definition and a topic, produce a <code>brief.v1</code>.
+  Everything else in those 112 files exists to make that one job autonomous, safe, and self-improving.
+  Here are all 15 capability areas grouped by their role in the workflow.
+</p>
+
+<div class="toc">
+  <h4>Quick map</h4>
+  <ol>
+    <li><a href="#foundation">Foundation</a> — the things that don't run, they just exist (5 areas)</li>
+    <li><a href="#input">Input pipeline</a> — what feeds the planner (2 areas)</li>
+    <li><a href="#core">The core workflow</a> — plan → produce → eval → publish (4 areas)</li>
+    <li><a href="#ops">Operations</a> — what keeps it running 24/7 (4 areas)</li>
+    <li><a href="#whole">How it all fits together</a> — the autonomous loop</li>
+  </ol>
+</div>
+
+<!-- ====================================================================== -->
+<div class="group foundation" id="foundation">
+  <span class="gtag">layer 1 · foundation</span>
+  <h2>Foundation — the things that don't run, they just exist</h2>
+  <p class="gintro">
+    These are the parts every other capability reads from. They define <i>who</i> the brand is, <i>who</i> is writing for it, <i>what</i> the rules are, and <i>how</i> to talk to the outside world. Nothing here generates content — it's all definitions and connectors.
+  </p>
+
+  <div class="cap">
+    <div class="header"><div class="name">core/ — the brand's "self"</div><div class="path">11 files</div></div>
+    <p class="one">Where the brand's identity, configuration, policies, and shared state live.</p>
+    <p class="what">
+      <code>brands.py</code> loads <code>brands/&lt;id&gt;/brand.md</code> into a typed object.
+      <code>config.py</code> holds suite-wide settings.
+      <code>identity.py</code> tracks brand identity (name, voice, positioning).
+      <b>policy.py</b> is the guardrail engine — every autonomous action runs through it and gets back <code>ALLOW / ESCALATE / DENY</code>.
+      <b>decision.py</b> is the audit log — every choice the system makes gets recorded with a type, status, and timestamp.
+      <code>learning.py</code> tracks outcomes so the brand learns what worked.
+      <code>storage.py</code> manages where files live on disk. <code>llm.py</code> wraps LLM calls. <code>signals.py</code>, <code>evaluation.py</code> are shared types.
+    </p>
+    <div class="files">files: <b>brands · config · identity · policy · decision · learning · storage · llm · signals · evaluation</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">agents/ — specialist subagents</div><div class="path">4 files</div></div>
+    <p class="one">Two specialist AI agents the brand can call on. Both inherit from a common base.</p>
+    <p class="what">
+      <code>base.py</code> defines what an agent is (a class that takes input, calls an LLM with specific tools, returns structured output).
+      <b>market.py</b> is the market-research agent — competitors, trends, segments.
+      <b>threat.py</b> is the risk-scanning agent — flags PR risks, legal issues, off-brand statements before they ship.
+    </p>
+    <p class="what">You can add a third specialist (e.g. "compliance" or "legal") by subclassing the base — no rewrite needed.</p>
+    <div class="files">files: <b>base · market · threat</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">persona/ — brand-local persona system</div><div class="path">11 files</div></div>
+    <p class="one">A second persona system that lives inside brand. (Yes, this is duplication with the top-level <code>persona</code> module.)</p>
+    <p class="what">
+      Same shape as the top-level persona module — <code>bootstrap, chat, crud, drift, enrichment, exporters, learning, optimization, storage</code>. Originally the top-level persona module split off from this. The duplication is a known sharp edge — see the warning on the main brand page.
+    </p>
+    <p class="what"><b>Practical impact:</b> the rest of the suite reads <code>voice_pack.v1</code> from the top-level module; this folder is brand's own local fallback when there's no exported voice pack to read.</p>
+    <div class="files">files: <b>bootstrap · chat · cli · crud · drift · enrichment · exporters · learning · optimization · storage</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">adapters/ — bridges to the outside world</div><div class="path">4 files</div></div>
+    <p class="one">Translators between brand's internal types and external systems.</p>
+    <p class="what">
+      <code>brandos.py</code> talks to <i>brand-os</i> (the sister system that owns brand templates).
+      <code>persona.py</code> imports voice packs from the top-level persona module.
+      <code>social.py</code> abstracts away the differences between social platforms (Twitter shapes posts differently than LinkedIn).
+    </p>
+    <div class="files">files: <b>brandos · persona · social</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">server/ — optional HTTP surface</div><div class="path">3 files</div></div>
+    <p class="one">If you don't want to use the CLI, brand exposes itself over HTTP.</p>
+    <p class="what">
+      <code>api.py</code> is a REST server.
+      <code>mcp.py</code> is a Model Context Protocol server — Claude or other AI clients can call brand's tools directly.
+    </p>
+    <p class="what">Most use cases never touch this. It exists so the same brand module can be embedded inside other applications.</p>
+    <div class="files">files: <b>api · mcp</b></div>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<div class="group input" id="input">
+  <span class="gtag">layer 2 · input pipeline</span>
+  <h2>Input pipeline — what feeds the planner</h2>
+  <p class="gintro">
+    Before the brand can plan a brief, it needs to know what's <i>happening in the world</i> that matters to it. These two areas pull in raw inputs and decide what's actually worth acting on.
+  </p>
+
+  <div class="cap">
+    <div class="header"><div class="name">signals/ — what's the world saying?</div><div class="path">13 files</div></div>
+    <p class="one">Monitors the outside world for things this brand should know about. Like Google Alerts, but smarter.</p>
+    <p class="what">
+      <b>sources/</b> contains the data feeds: <code>rss</code>, <code>reddit</code>, <code>reddit_discover</code>.
+      <b>providers/</b> wraps third-party APIs: <code>google_news</code>, <code>web</code> (general scraping), <code>file</code> (local docs as a source).
+      <code>relevance.py</code> scores each incoming signal — is this actually relevant to <i>this</i> brand's pillars?
+      <code>history.py</code> remembers what's been seen so the system doesn't react to the same news twice.
+      <code>schema.py</code> defines what a "signal" looks like as a typed object.
+    </p>
+    <div class="io">
+      <span class="in"><b>in:</b> RSS feeds, Reddit threads, Google News, web pages</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> scored, deduplicated signals</span>
+    </div>
+    <div class="files">files: <b>cli · history · relevance · schema · providers/{file,google_news,web} · sources/{reddit,reddit_discover,rss}</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">intel/ — deep dives on what signals surface</div><div class="path">8 files</div></div>
+    <p class="one">When a signal is interesting, intel goes deep. Scrape pages, extract entities, find outliers.</p>
+    <p class="what">
+      <code>pipeline.py</code> orchestrates the deep-dive flow.
+      <b>scrapers/</b> — <code>web.py</code> for generic scraping, <code>apify.py</code> for the Apify platform (handles auth walls, dynamic content).
+      <code>outliers.py</code> finds anomalies in the scraped data (unusually viral threads, suspicious sentiment spikes).
+      <code>hooks.py</code> lets you plug custom logic in at specific points.
+    </p>
+    <div class="io">
+      <span class="in"><b>in:</b> a high-relevance signal</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> enriched context (full page contents, entities, anomalies)</span>
+    </div>
+    <div class="files">files: <b>cli · hooks · outliers · pipeline · scrapers/{apify,web}</b></div>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<div class="group core" id="core">
+  <span class="gtag">layer 3 · core workflow</span>
+  <h2>The core workflow — plan → produce → eval → publish</h2>
+  <p class="gintro">
+    This is the heart of the brand module. The journey from "a topic" to "a published post" runs through these four stages in order. The first stage (plan) produces the <code>brief.v1</code>. The next three turn that brief into actual content and ship it.
+  </p>
+
+  <div class="cap">
+    <div class="header"><div class="name">plan/ — turns a topic into a brief.v1</div><div class="path">13 files</div></div>
+    <p class="one">The most important module in brand. This is where the brief.v1 artifact gets built.</p>
+    <p class="what">
+      <code>brief_v1.py</code> defines the Pydantic types for brief.v1 (the spine artifact).
+      <b>stages/</b> runs the 4-step planning pipeline:
+      <code>research</code> (competitors, sources, segments) →
+      <code>strategy</code> (audience, pillars, angle, CTA) →
+      <code>creative</code> (headlines, copy, assets) →
+      <code>activation</code> (channels, calendar, KPIs).
+      <code>stages/normalize.py</code> collapses these verbose stage outputs into the lean brief.v1 shape.
+      <b>plugins/</b> — <code>seo.py</code> and <code>social.py</code> add domain-specific guidance.
+      <code>store.py</code> persists every plan run so you can replay any prior brief.
+    </p>
+    <div class="io">
+      <span class="in"><b>in:</b> brand.md + voice_pack.v1 + topic + signals</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> brief.v1.json</span>
+    </div>
+    <div class="files">files: <b>brief_v1 · cli · store · stages/{research,strategy,creative,activation,normalize} · plugins/{seo,social}</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">produce/ — turns a brief into actual content</div><div class="path">14 files</div></div>
+    <p class="one">Given the brief, draft the post: text copy, generated image, generated video.</p>
+    <p class="what">
+      <code>copy.py</code> drafts post text in the voice from the voice pack.
+      <b>image/</b> generates images — <code>generate.py</code> is the orchestrator, <code>providers/</code> wraps OpenAI / Gemini / Stability.
+      <b>video/</b> does the same for video.
+      <code>queue.py</code> queues content for later publishing — useful for scheduled drops or rate-limited platforms.
+    </p>
+    <p class="what">Note: there's overlap with the TypeScript studio module's render pipeline. The Python <code>produce/</code> path is for content that stays inside brand (drafts, queues, pre-publish previews); the TS <code>studio/</code> path is for final renders that get published. They share concepts but aren't the same code.</p>
+    <div class="io">
+      <span class="in"><b>in:</b> brief.v1</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> draft post + media files</span>
+    </div>
+    <div class="files">files: <b>cli · copy · queue · image/{generate,providers} · video/{generate,providers}</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">eval/ — is this draft good enough?</div><div class="path">6 files</div></div>
+    <p class="one">Score the drafted content against a rubric. If it fails, fix it.</p>
+    <p class="what">
+      <code>rubric.py</code> defines the scoring criteria (voice fidelity, on-brand, claim safety, hook strength).
+      <code>grader.py</code> is the LLM-based grader that scores a draft against the rubric.
+      <b>heal.py</b> takes a failed draft + the rubric findings and tries to fix it automatically.
+      <code>learnings.py</code> persists what the eval found, so the system gets sharper over time.
+    </p>
+    <div class="io">
+      <span class="in"><b>in:</b> draft post + brand rubric</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> pass/fail score, healed draft if needed</span>
+    </div>
+    <div class="files">files: <b>cli · grader · heal · learnings · rubric</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">publish/ — push it out to the world</div><div class="path">11 files</div></div>
+    <p class="one">Send the approved post to social platforms. This is brand's own publish path (separate from studio's TS publish path).</p>
+    <p class="what">
+      <b>platforms/</b> has direct adapters for each: <code>twitter</code>, <code>linkedin</code>, <code>facebook</code>, <code>instagram</code>, <code>threads</code>, <code>youtube</code>.
+      <code>queue.py</code> manages scheduled and immediate posts.
+      <code>rate_limit.py</code> enforces per-platform rate limits so you don't get banned.
+    </p>
+    <p class="what">Why both brand and studio have a publish path: brand's is for Python-only setups (no Node), studio's is the canonical path with full SQLite-backed run engine. Most users will end up using studio.</p>
+    <div class="io">
+      <span class="in"><b>in:</b> approved draft</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> post ID from the platform + decision log entry</span>
+    </div>
+    <div class="files">files: <b>cli · queue · rate_limit · platforms/{facebook,instagram,linkedin,threads,twitter,youtube}</b></div>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<div class="group ops" id="ops">
+  <span class="gtag">layer 4 · operations</span>
+  <h2>Operations — what keeps it running 24/7</h2>
+  <p class="gintro">
+    The core workflow runs once per topic. These four areas turn it into a daemon — continuous signal monitoring, autonomous decisions inside policy guardrails, human escalation when needed, and post-publish monitoring.
+  </p>
+
+  <div class="cap">
+    <div class="header"><div class="name">loop.py + loop_cli.py — the autonomous daemon</div><div class="path">root files</div></div>
+    <p class="one">The thing that runs continuously in a container. Wakes up, checks signals, makes decisions, posts content, sleeps, repeats.</p>
+    <p class="what">
+      Design pattern they use: <b>"human-over-the-loop"</b> (not human-<i>in</i>-the-loop). Humans set the policies and thresholds; the system operates autonomously within them. When something falls outside policy, it escalates to a human queue. Otherwise it just runs.
+    </p>
+    <p class="what">
+      The loop ties together: <code>signals</code> (what's happening) → <code>policy.py</code> (am I allowed to act?) → <code>plan</code> (what should I make?) → <code>produce</code> → <code>eval</code> → <code>publish</code> → <code>decision.py</code> (log what I did) → <code>learning.py</code> (track outcomes).
+    </p>
+    <div class="files">root files: <b>loop · loop_cli · cli · cli_utils</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">monitor/ — watching what happened after publish</div><div class="path">4 files</div></div>
+    <p class="one">Once content is live, track how it performs and whether the brand is being talked about correctly.</p>
+    <p class="what">
+      <code>reports.py</code> generates periodic brand health reports.
+      <code>emailer.py</code> sends them out.
+      Combined with <code>monitor</code>'s drift detection, this is brand's read-channel — it knows what's happening to the brand in the world, not just what it's publishing.
+    </p>
+    <div class="io">
+      <span class="in"><b>in:</b> published posts + ongoing signals</span>
+      <span class="arrow">→</span>
+      <span class="out"><b>out:</b> health reports, drift alerts</span>
+    </div>
+    <div class="files">files: <b>cli · emailer · reports</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">actions/ — atomic things the loop can do</div><div class="path">3 files</div></div>
+    <p class="one">Two specific actions the loop can take that aren't full workflows: write something, or notify someone.</p>
+    <p class="what">
+      <code>write.py</code> = produce content of any kind.
+      <code>notify.py</code> = send a notification (email, Slack, etc.).
+      These exist so the policy engine can describe permitted behaviors at a fine grain ("this brand can <code>write</code> autonomously but must escalate <code>notify</code>").
+    </p>
+    <div class="files">files: <b>notify · write</b></div>
+  </div>
+
+  <div class="cap">
+    <div class="header"><div class="name">workflows/ — human-in-the-loop approval flows</div><div class="path">2 files</div></div>
+    <p class="one">When the policy engine returns <code>ESCALATE</code>, the work doesn't get dropped — it goes into an approval workflow.</p>
+    <p class="what">
+      <code>approval.py</code> manages the queue of pending decisions awaiting human review. A human sees the proposed action, the context, the policy reasoning, and approves or rejects.
+    </p>
+    <p class="what">Approved items flow back into the loop and execute. Rejected items get logged as <code>decision.status = denied</code> and the system learns from the pattern.</p>
+    <div class="files">files: <b>approval</b></div>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<h2 id="whole">How it all fits together — the autonomous loop</h2>
+
+<p>This is the picture of brand running unsupervised, every minute of the day. Everything you read above plugs in here.</p>
+
+<div class="flow">
+<svg viewBox="0 0 880 460" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a5a1b"/>
+    </marker>
+  </defs>
+  <style>
+    .b{fill:#fffaef;stroke:#e3dcc4;stroke-width:1.5;rx:6}
+    .t{font:600 13px Georgia,serif;fill:#1c1a14;text-anchor:middle}
+    .ts{font:600 12px Georgia,serif;fill:#1c1a14;text-anchor:middle}
+    .l{font:10.5px ui-monospace,Menlo,monospace;fill:#76705e;text-anchor:middle}
+    .a{stroke:#8a5a1b;stroke-width:1.5;fill:none}
+    .foundation{fill:#efeaf8;stroke:#6a4c93}
+    .input{fill:#dde6ed;stroke:#2c5e7e}
+    .core{fill:#f3e2d6;stroke:#a8451f}
+    .ops{fill:#e0eadc;stroke:#3a6b48}
+  </style>
+
+  <!-- Foundation layer (left side, always present) -->
+  <rect class="b foundation" x="20"  y="20" width="160" height="56" rx="6"/>
+  <text class="t" x="100" y="44">core/</text>
+  <text class="l" x="100" y="62">brand · policy · decision · llm</text>
+
+  <rect class="b foundation" x="20"  y="100" width="160" height="56" rx="6"/>
+  <text class="t" x="100" y="124">agents/</text>
+  <text class="l" x="100" y="142">market · threat</text>
+
+  <rect class="b foundation" x="20"  y="180" width="160" height="56" rx="6"/>
+  <text class="t" x="100" y="204">adapters/</text>
+  <text class="l" x="100" y="222">brandos · persona · social</text>
+
+  <text class="l" x="100" y="270" style="font-weight:600;letter-spacing:.08em;text-transform:uppercase">↓ read by all stages ↓</text>
+
+  <!-- Input pipeline (top center) -->
+  <rect class="b input" x="240" y="20" width="140" height="56" rx="6"/>
+  <text class="t" x="310" y="44">signals/</text>
+  <text class="l" x="310" y="62">rss · reddit · news</text>
+
+  <rect class="b input" x="240" y="100" width="140" height="56" rx="6"/>
+  <text class="t" x="310" y="124">intel/</text>
+  <text class="l" x="310" y="142">deep-dive · entities</text>
+
+  <!-- Core workflow chain (center horizontal) -->
+  <rect class="b core" x="430" y="60" width="120" height="60" rx="6"/>
+  <text class="t" x="490" y="84">plan/</text>
+  <text class="l" x="490" y="102">→ brief.v1</text>
+
+  <rect class="b core" x="570" y="60" width="120" height="60" rx="6"/>
+  <text class="t" x="630" y="84">produce/</text>
+  <text class="l" x="630" y="102">copy · image · video</text>
+
+  <rect class="b core" x="430" y="160" width="120" height="60" rx="6"/>
+  <text class="t" x="490" y="184">eval/</text>
+  <text class="l" x="490" y="202">grade · heal</text>
+
+  <rect class="b core" x="570" y="160" width="120" height="60" rx="6"/>
+  <text class="t" x="630" y="184">publish/</text>
+  <text class="l" x="630" y="202">6 platforms</text>
+
+  <!-- arrows in core chain -->
+  <line class="a" x1="380" y1="90"  x2="428" y2="90" marker-end="url(#ar)"/>
+  <line class="a" x1="550" y1="90"  x2="568" y2="90" marker-end="url(#ar)"/>
+  <line class="a" x1="630" y1="120" x2="630" y2="158" marker-end="url(#ar)"/>
+  <line class="a" x1="490" y1="160" x2="490" y2="120"/>
+  <line class="a" x1="490" y1="220" x2="490" y2="240" />
+  <line class="a" x1="568" y1="190" x2="552" y2="190" marker-end="url(#ar)"/>
+
+  <!-- Ops layer (right + bottom) -->
+  <rect class="b ops" x="720" y="60" width="140" height="60" rx="6"/>
+  <text class="t" x="790" y="84">monitor/</text>
+  <text class="l" x="790" y="102">post-publish health</text>
+
+  <rect class="b ops" x="720" y="160" width="140" height="60" rx="6"/>
+  <text class="t" x="790" y="184">workflows/</text>
+  <text class="l" x="790" y="202">human approval queue</text>
+
+  <line class="a" x1="690" y1="190" x2="718" y2="190" marker-end="url(#ar)"/>
+  <line class="a" x1="690" y1="90"  x2="718" y2="90"  marker-end="url(#ar)"/>
+
+  <!-- Bottom loop -->
+  <rect class="b ops" x="240" y="300" width="220" height="80" rx="8" stroke-width="2"/>
+  <text class="ts" x="350" y="328" style="font-size:15px">loop.py</text>
+  <text class="l" x="350" y="348">orchestrates everything above</text>
+  <text class="l" x="350" y="362">policy check before each action</text>
+
+  <rect class="b ops" x="500" y="300" width="180" height="80" rx="8" stroke-width="2"/>
+  <text class="ts" x="590" y="328" style="font-size:14px">decision log</text>
+  <text class="l" x="590" y="348">every action recorded</text>
+  <text class="l" x="590" y="362">core/decision.py</text>
+
+  <rect class="b ops" x="700" y="300" width="160" height="80" rx="8" stroke-width="2"/>
+  <text class="ts" x="780" y="328" style="font-size:14px">learning.py</text>
+  <text class="l" x="780" y="348">outcomes tracked,</text>
+  <text class="l" x="780" y="362">priors updated</text>
+
+  <!-- arrows from core chain into loop -->
+  <line class="a" x1="490" y1="240" x2="490" y2="298" marker-end="url(#ar)"/>
+  <line class="a" x1="460" y1="340" x2="500" y2="340" marker-end="url(#ar)"/>
+  <line class="a" x1="680" y1="340" x2="700" y2="340" marker-end="url(#ar)"/>
+
+  <!-- arrow learning back to loop -->
+  <path class="a" d="M780 380 Q 780 420 350 420 Q 200 420 250 360" marker-end="url(#ar)"/>
+  <text class="l" x="500" y="437">priors feed back to next iteration</text>
+
+  <!-- legend -->
+  <rect x="20" y="400" width="14" height="14" class="foundation"/><text class="l" x="42" y="411" text-anchor="start">foundation</text>
+  <rect x="20" y="420" width="14" height="14" class="input"/><text class="l" x="42" y="431" text-anchor="start">input</text>
+  <rect x="105" y="400" width="14" height="14" class="core"/><text class="l" x="127" y="411" text-anchor="start">core flow</text>
+  <rect x="105" y="420" width="14" height="14" class="ops"/><text class="l" x="127" y="431" text-anchor="start">operations</text>
+</svg>
+</div>
+
+<h3>What this actually looks like in time</h3>
+
+<div class="pre"><span class="c">[09:00:00]</span> loop wakes up
+<span class="c">[09:00:01]</span>   signals/ — pulls last hour: 142 new items (RSS, Reddit, Google News)
+<span class="c">[09:00:02]</span>   signals/relevance — scores them, keeps 7 above threshold
+<span class="c">[09:00:03]</span>   intel/ — deep-dives the top 2 (full page contents, entity extraction)
+<span class="c">[09:00:05]</span>   core/policy — "should I plan content for these?"  → ALLOW
+<span class="c">[09:00:06]</span>   plan/ — runs research → strategy → creative → activation → normalize
+<span class="c">[09:00:42]</span>     ✓ brief.v1 written to disk (this is the spine artifact)
+<span class="c">[09:00:43]</span>   produce/ — drafts copy in Ashton's voice, generates image
+<span class="c">[09:01:18]</span>   eval/ — scores draft against rubric:  voice 0.91, on-brand 0.88,
+                claim-safe 0.95, hook 0.72 → PASS
+<span class="c">[09:01:19]</span>   core/policy — "publish to twitter+linkedin+ig?" → ALLOW (autonomous)
+<span class="c">[09:01:20]</span>   publish/ — posts to 3 platforms via direct adapters
+<span class="c">[09:01:24]</span>     ✓ all 3 succeeded — IDs logged
+<span class="c">[09:01:25]</span>   core/decision — appended to audit log (type=content_publish, status=success)
+<span class="c">[09:01:26]</span>   core/learning — outcome stub recorded, awaits real engagement data
+<span class="c">[09:01:27]</span> loop sleeps 60 minutes
+
+<span class="c">[09:33:00]</span>   <span class="c">— meanwhile, a new signal scores 0.97 and triggers an off-cycle wake —</span>
+<span class="c">[09:33:01]</span>   plan/ runs again on the new topic
+<span class="c">[09:33:55]</span>   eval/ — hook score 0.41 — FAIL → heal.py rewrites
+<span class="c">[09:34:20]</span>   eval/ — second draft passes
+<span class="c">[09:34:21]</span>   core/policy — "publish?" → ESCALATE (sensitive topic detected by threat agent)
+<span class="c">[09:34:22]</span>   workflows/approval — queued for human review
+<span class="c">[09:34:23]</span>   actions/notify — emails the brand owner
+
+<span class="c">[10:42:00]</span>   <span class="c">— human approves the queued item from web UI —</span>
+<span class="c">[10:42:01]</span>   publish/ — pushes to platforms
+<span class="c">[10:42:08]</span>   core/decision — logged as approved-after-escalation</div>
+
+<div class="callout">
+  <b>The thing to notice:</b> every box in the diagram is touched in a normal hour of the loop. Foundation reads happen everywhere. Input pipeline runs continuously. Core workflow runs each time a topic fires. Operations wrap and govern the whole thing. <b>112 files is not bloat — it's the surface area of running a brand autonomously, with safety, with audit, with learning.</b>
+</div>
+
+<h2>How to read this for quality judgment</h2>
+
+<p><b>Sign that this is well-engineered:</b> the layers are clean. Foundation has no dependencies on input or workflow. Workflow has no dependencies on operations. Operations call into workflow, not the other way around. You can excise the operations layer and the rest still works as a one-shot CLI tool. That's separation of concerns done right.</p>
+
+<p><b>Sign of accumulated complexity:</b> the <code>brand/persona/</code> folder duplicates the top-level persona module. The <code>brand/publish/</code> path duplicates studio's publish path. These are the seams where the system has been refactored and the old code hasn't been deleted yet. In an audit, you'd flag these — they're not bugs, but they're tech debt that will eventually need cleanup.</p>
+
+<p><b>Sign of real autonomy thinking:</b> the policy engine returns three verdicts (allow / escalate / deny), not just yes/no. The decision log is a typed enum with eight specific decision types. The learning module ties outcomes back to decisions. This is what a system that has actually been run in production looks like — most "autonomous AI" repos have none of this scaffolding because they've never run unsupervised for long enough to need it.</p>
+
+<div class="nav">
+  <a href="module-brand.html">← brand overview</a>
+  <a href="workflows.html">all modules</a>
+</div>
+
+</div>
+</body>
+</html>

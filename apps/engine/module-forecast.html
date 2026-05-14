@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>forecast — agentcy module 3</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#fbf6e9;--paper:#fffaef;--ink:#1c1a14;--dim:#76705e;--line:#e3dcc4;--accent:#2c5e7e;--green:#3a6b48;--mono:ui-monospace,"SF Mono",Menlo,monospace;--serif:"Iowan Old Style",Palatino,Georgia,serif;--sans:-apple-system,"Inter",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  .wrap{max-width:880px;margin:0 auto;padding:36px 28px 120px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;font:12px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .top a{color:var(--accent);text-decoration:none}
+  .top .step{background:var(--accent);color:#fff;padding:4px 10px;border-radius:999px}
+  h1{font:600 44px/1.1 var(--serif);letter-spacing:-.01em;margin:0 0 8px;color:var(--accent)}
+  .role{font-size:19px;color:var(--dim);margin:0 0 36px;max-width:680px}
+  h2{font:600 24px/1.2 var(--serif);margin:48px 0 12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h3{font:600 13px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:20px 0 8px}
+  p{margin:0 0 12px;max-width:680px}
+  code{font:13px var(--mono);background:#f1ead2;padding:2px 6px;border-radius:4px;color:var(--accent)}
+  .pre{background:var(--paper);border:1px solid var(--line);padding:14px 18px;border-radius:6px;font:12.5px/1.55 var(--mono);overflow-x:auto;margin:14px 0;white-space:pre}
+  .pre .c{color:var(--dim)} .pre .k{color:var(--accent)} .pre .v{color:var(--green)} .pre .s{color:#a8451f}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  table th,table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  table th{font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+  table td.f{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
+  .nav{margin-top:48px;display:flex;justify-content:space-between;font:13px var(--sans);padding-top:18px;border-top:1px solid var(--line)}
+  .nav a{color:var(--accent);text-decoration:none}
+  .callout{background:#dde6ed;border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0;font-size:14.5px}
+  /* diagram */
+  .swarm{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:24px;margin:18px 0;text-align:center}
+  .swarm svg{max-width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a href="module-brand.html">← brand</a>
+  <span class="step">step 3 of 5</span>
+  <a href="module-studio.html">next: studio →</a>
+</div>
+
+<h1>forecast</h1>
+<p class="role">Simulate a crowd of fake audience members reacting to the brief, then summarize what they'd do. The most novel and most technical module — it's a graph + memory + multi-agent swarm, not a GPT roleplay.</p>
+
+<h2>What it actually does</h2>
+<p>You hand it: <b>(a)</b> the brief from the brand module, and <b>(b)</b> a folder of supporting documents (product specs, prior posts, market research). It does the following:</p>
+
+<ol style="max-width:680px;font-size:15px;line-height:1.7">
+  <li>Reads the docs and <b>extracts entities</b> — people, claims, products, competitors.</li>
+  <li>Builds an <b>ontology</b> — what kinds of things matter for this topic, what relationships exist.</li>
+  <li>Constructs a <b>knowledge graph</b> from the entities and ontology, stored in a graph DB.</li>
+  <li>Generates <b>audience profiles</b> using <code>oasis</code> (a social network simulator from camel-ai).</li>
+  <li>Spins up a <b>swarm of agents</b> — each one with their own memory, profile, and view of the graph.</li>
+  <li>Runs a <b>simulation</b> on a social platform model (Twitter-like, LinkedIn-like, etc).</li>
+  <li>Reads the simulation logs and writes a <b>structured forecast</b> with scenarios + confidence scores.</li>
+</ol>
+
+<div class="callout">
+  <b>Why this is unusual:</b> almost every other "AI predicts engagement" tool just asks an LLM directly. This module simulates an actual network with stateful agents that interact. The output isn't a guess — it's a record of what the simulated crowd did.
+</div>
+
+<h2>The flow, visually</h2>
+
+<div class="swarm">
+<svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2c5e7e"/>
+    </marker>
+  </defs>
+  <style>
+    .lbl{font:11px ui-monospace,Menlo,monospace;fill:#76705e}
+    .box{fill:#fffaef;stroke:#e3dcc4;stroke-width:1.5}
+    .acc{fill:#2c5e7e}
+    .ttl{font:600 13px Georgia,serif;fill:#1c1a14}
+    .ar{stroke:#2c5e7e;stroke-width:1.5;fill:none}
+  </style>
+  <!-- input -->
+  <rect class="box" x="10" y="130" width="100" height="60" rx="4"/>
+  <text class="ttl" x="60" y="155" text-anchor="middle">brief.v1</text>
+  <text class="ttl" x="60" y="172" text-anchor="middle">+ docs/</text>
+
+  <!-- entity + ontology -->
+  <rect class="box" x="140" y="60" width="110" height="50" rx="4"/>
+  <text class="ttl" x="195" y="80" text-anchor="middle">entity</text>
+  <text class="ttl" x="195" y="96" text-anchor="middle">extraction</text>
+
+  <rect class="box" x="140" y="210" width="110" height="50" rx="4"/>
+  <text class="ttl" x="195" y="230" text-anchor="middle">ontology</text>
+  <text class="ttl" x="195" y="246" text-anchor="middle">generator</text>
+
+  <!-- graph -->
+  <rect class="box" x="280" y="130" width="110" height="60" rx="4"/>
+  <text class="ttl" x="335" y="155" text-anchor="middle">knowledge</text>
+  <text class="ttl" x="335" y="172" text-anchor="middle">graph (DB)</text>
+
+  <!-- swarm -->
+  <g>
+    <circle class="acc" cx="455" cy="80" r="8"/>
+    <circle class="acc" cx="495" cy="60" r="8"/>
+    <circle class="acc" cx="535" cy="90" r="8"/>
+    <circle class="acc" cx="460" cy="120" r="8"/>
+    <circle class="acc" cx="510" cy="140" r="8"/>
+    <circle class="acc" cx="555" cy="120" r="8"/>
+    <line class="ar" x1="455" y1="80" x2="495" y2="60"/>
+    <line class="ar" x1="495" y1="60" x2="535" y2="90"/>
+    <line class="ar" x1="460" y1="120" x2="510" y2="140"/>
+    <line class="ar" x1="510" y1="140" x2="555" y2="120"/>
+    <line class="ar" x1="495" y1="60" x2="510" y2="140"/>
+    <text class="ttl" x="500" y="180" text-anchor="middle">swarm sim</text>
+    <text class="lbl" x="500" y="196" text-anchor="middle">(oasis)</text>
+  </g>
+
+  <!-- report -->
+  <rect class="box" x="590" y="130" width="100" height="60" rx="4"/>
+  <text class="ttl" x="640" y="155" text-anchor="middle">forecast</text>
+  <text class="ttl" x="640" y="172" text-anchor="middle">.v1</text>
+
+  <!-- arrows -->
+  <path class="ar" d="M110 145 Q 125 90 140 85" marker-end="url(#arr)"/>
+  <path class="ar" d="M110 175 Q 125 230 140 235" marker-end="url(#arr)"/>
+  <path class="ar" d="M250 85 Q 270 110 285 140" marker-end="url(#arr)"/>
+  <path class="ar" d="M250 235 Q 270 210 285 180" marker-end="url(#arr)"/>
+  <path class="ar" d="M390 160 L 445 105" marker-end="url(#arr)"/>
+  <path class="ar" d="M555 130 L 588 155" marker-end="url(#arr)"/>
+</svg>
+</div>
+
+<h2>What's in the folder — 66 Python files</h2>
+
+<h3>The graph stack (the brain)</h3>
+<table>
+<thead><tr><th>File</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td class="f">entity_extractor.py</td><td>Pulls entities (people, products, claims) from input docs</td></tr>
+<tr><td class="f">ontology_generator.py</td><td>Auto-generates the ontology for this domain — what kinds of nodes/edges matter</td></tr>
+<tr><td class="f">graph_builder.py</td><td>Builds the knowledge graph from entities + ontology</td></tr>
+<tr><td class="f">graph_db.py / graph_storage.py</td><td>Graph database backend + persistence</td></tr>
+<tr><td class="f">graph_memory_updater.py</td><td>Each agent has memory; this updates what they "know" as the sim runs</td></tr>
+<tr><td class="f">graph_retrieval.py</td><td>RAG over the graph — agents query it during the sim</td></tr>
+<tr><td class="f">graph_interview.py</td><td>Iterative refinement loop — interviews the graph to fill gaps</td></tr>
+<tr><td class="f">graph_models.py</td><td>Pydantic models for the graph schema</td></tr>
+<tr><td class="f">graph_search_tools.py / graph_tools.py</td><td>Tool interfaces the agents use to query the graph</td></tr>
+</tbody>
+</table>
+
+<h3>The simulation stack (the swarm)</h3>
+<table>
+<thead><tr><th>File</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td class="f">oasis_profile_generator.py</td><td>Generates personas for each agent in the simulated network</td></tr>
+<tr><td class="f">simulation_config_generator.py</td><td>Builds the sim config — how many agents, what platform, run length</td></tr>
+<tr><td class="f">simulation_manager.py</td><td>Orchestrates the sim across runs</td></tr>
+<tr><td class="f">simulation_runner.py</td><td>Actually runs one sim — ticks, agent actions, message passing</td></tr>
+<tr><td class="f">simulation_platforms.py</td><td>Models for different platforms (Twitter-like, LinkedIn-like)</td></tr>
+<tr><td class="f">simulation_ipc.py</td><td>Inter-process communication — sims run in subprocesses</td></tr>
+</tbody>
+</table>
+
+<h3>The report stack (the output)</h3>
+<table>
+<thead><tr><th>File</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td class="f">report_agent.py</td><td>LLM agent that reads sim logs and writes the forecast narrative</td></tr>
+<tr><td class="f">report_language.py</td><td>Constraints on how the forecast is phrased (confidence levels, hedging rules)</td></tr>
+<tr><td class="f">report_logger.py</td><td>Persisted log of every report decision</td></tr>
+<tr><td class="f">run_artifacts.py</td><td>Manages the immutable artifact directory per run</td></tr>
+<tr><td class="f">run_eval.py</td><td>Evaluation harness for forecast accuracy</td></tr>
+<tr><td class="f">smoke_mode.py</td><td>Fast deterministic mode for CI / smoke testing</td></tr>
+<tr><td class="f">visual_snapshots.py</td><td>Captures sim state for visualization</td></tr>
+</tbody>
+</table>
+
+<h2>The output — forecast.v1.json</h2>
+<p>10 required fields. The interesting ones:</p>
+
+<div class="pre">{
+  <span class="k">"artifact_type"</span>: <span class="s">"forecast.v1"</span>,
+  <span class="k">"forecast_id"</span>: <span class="s">"sbf.fc.2026-05-12.001"</span>,
+  <span class="k">"brief_id"</span>:    <span class="s">"sbf.brief.2026-05-12.001"</span>,
+  <span class="k">"brand_id"</span>:    <span class="s">"shepherdboyfarms"</span>,
+  <span class="k">"writer"</span>: { <span class="k">"repo"</span>: <span class="s">"cli-mirofish"</span>, <span class="k">"module"</span>: <span class="s">"agentcy-echo"</span> },
+  <span class="k">"status"</span>: <span class="s">"completed"</span>,
+  <span class="k">"completed_at"</span>: <span class="s">"2026-05-12T19:42:18Z"</span>,
+  <span class="k">"timeframe"</span>: <span class="s">"7d-post-publish"</span>,
+
+  <span class="k">"summary"</span>: {
+    <span class="k">"thesis"</span>:     <span class="s">"Raw-curious owners engage strongly on TikTok; LinkedIn flat."</span>,
+    <span class="k">"confidence"</span>: <span class="v">0.72</span>,
+    <span class="k">"recommended_action"</span>: <span class="s">"Lead on TikTok with farm BTS; skip LinkedIn."</span>
+  },
+
+  <span class="k">"scenarios"</span>: [
+    {
+      <span class="k">"label"</span>:       <span class="s">"baseline"</span>,
+      <span class="k">"probability"</span>: <span class="v">0.55</span>,
+      <span class="k">"engagement"</span>:  { <span class="k">"likes"</span>: 1200, <span class="k">"shares"</span>: 88, <span class="k">"comments"</span>: 140 },
+      <span class="k">"reactions"</span>:   [<span class="s">"curious"</span>, <span class="s">"skeptical-on-price"</span>]
+    },
+    { <span class="c">/* scenario 2: viral, lower prob, higher engagement */</span> },
+    { <span class="c">/* scenario 3: flop, what would cause it */</span> }
+  ]
+}</div>
+
+<h2>The pinned dependencies (don't upgrade these)</h2>
+<div class="pre"><span class="k">camel-oasis</span> == <span class="s">0.2.5</span>    <span class="c"># the social network simulator</span>
+<span class="k">camel-ai</span>    == <span class="s">0.2.78</span>   <span class="c"># the multi-agent framework</span></div>
+<p>The CLAUDE.md explicitly forbids upgrading these. That's a tell — the team has been burned by behavior changes between versions. Pinning at the patch level (not the minor) suggests deep integration.</p>
+
+<h2>Why this module matters most for "quality" assessment</h2>
+<p><b>This is where most AI repos fail.</b> They claim audience prediction but implement a single LLM call ("predict how X audience would react"). That gives you the LLM's stereotypes, not an audience simulation.</p>
+<p><b>Forecast does the harder thing.</b> Build a graph, populate it with agents, give them memory, let them interact, then read the results. The output is grounded in observed behavior of a simulated network, even if that network is fake.</p>
+<p><b>And it gets calibrated.</b> The metrics module compares forecasted scenarios against realized engagement and updates priors. Over time, the system's predictions should get sharper. (That's the loop.)</p>
+
+<div class="nav">
+  <a href="module-brand.html">← brand</a>
+  <a href="module-studio.html">next: studio →</a>
+</div>
+
+</div>
+</body>
+</html>

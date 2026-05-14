@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agentcy — how this repo works</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --bg:#fbf6e9;--paper:#fffaef;--ink:#1c1a14;--dim:#76705e;
+    --line:#e3dcc4;--accent:#8a5a1b;--green:#3a6b48;--rust:#a8451f;
+    --persona:#6a4c93;--brand:#8a5a1b;--forecast:#2c5e7e;--studio:#3a6b48;--metrics:#a8451f;
+    --mono: ui-monospace,"SF Mono",Menlo,monospace;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:-apple-system,"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  .wrap{max-width:880px;margin:0 auto;padding:56px 28px 120px}
+  h1{font:600 44px/1.1 var(--serif);letter-spacing:-.01em;margin:0 0 14px}
+  h2{font:600 28px/1.2 var(--serif);margin:56px 0 14px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  h3{font:600 14px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:24px 0 10px}
+  p{margin:0 0 14px;max-width:680px}
+  .lede{font-size:19px;color:var(--dim);max-width:680px;margin-bottom:8px}
+  code{font:13px var(--mono);background:#f1ead2;padding:2px 6px;border-radius:4px;color:var(--accent)}
+  .pre{background:var(--paper);border:1px solid var(--line);padding:16px 18px;border-radius:6px;font:12.5px/1.6 var(--mono);overflow-x:auto;color:var(--ink);margin:14px 0}
+  .pre .c{color:var(--dim)}
+  .pre .k{color:var(--accent)}
+  .pre .v{color:var(--green)}
+
+  /* analogy box */
+  .analogy{background:var(--paper);border-left:3px solid var(--accent);padding:18px 22px;margin:24px 0;border-radius:0 6px 6px 0}
+  .analogy h3{margin-top:0;color:var(--accent)}
+  .analogy p{margin-bottom:0}
+
+  /* pipeline */
+  .pipe{margin:28px 0}
+  .stage{display:grid;grid-template-columns:56px 1fr;gap:18px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+  .stage:last-child{border-bottom:none}
+  .stage .badge{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 16px var(--serif);color:#fff}
+  .stage[data-mod=persona] .badge{background:var(--persona)}
+  .stage[data-mod=brand] .badge{background:var(--brand)}
+  .stage[data-mod=forecast] .badge{background:var(--forecast)}
+  .stage[data-mod=studio] .badge{background:var(--studio)}
+  .stage[data-mod=metrics] .badge{background:var(--metrics)}
+  .stage h4{margin:0 0 4px;font:600 20px var(--serif)}
+  .stage h4 a{color:var(--ink);text-decoration:none;border-bottom:1px dashed var(--dim)}
+  .stage h4 a:hover{border-bottom-color:var(--accent);color:var(--accent)}
+  .stage .one{color:var(--ink);font-size:15px;margin:0 0 8px}
+  .stage .flow{font:12px var(--mono);color:var(--dim)}
+  .stage .flow .in{color:var(--dim)}
+  .stage .flow .out{color:var(--accent)}
+
+  /* nav cards */
+  .nav{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:32px 0}
+  .nav a{text-decoration:none;padding:14px 12px;border-radius:6px;text-align:center;color:#fff;font:600 13px var(--sans);letter-spacing:.04em;text-transform:uppercase;transition:transform .1s}
+  .nav a:hover{transform:translateY(-2px)}
+  .nav a.persona{background:var(--persona)}
+  .nav a.brand{background:var(--brand)}
+  .nav a.forecast{background:var(--forecast)}
+  .nav a.studio{background:var(--studio)}
+  .nav a.metrics{background:var(--metrics)}
+
+  .callout{background:#f4ecd2;border:1px solid var(--line);padding:16px 20px;border-radius:6px;margin:18px 0;font-size:14.5px}
+  .callout b{color:var(--accent)}
+
+  footer{margin-top:80px;color:var(--dim);font-size:12.5px;font-family:var(--mono);border-top:1px solid var(--line);padding-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>How agentcy works</h1>
+<p class="lede">
+  Five small programs in a row. Each one takes a file in and writes a file out. The output of one is the input of the next.
+  That's the whole architecture.
+</p>
+
+<div class="analogy">
+  <h3>The kitchen analogy</h3>
+  <p>
+    Think of a restaurant kitchen. The <b>menu writer</b> picks the voice ("rustic farm-to-table"). The <b>chef</b> writes the menu using that voice. A <b>focus group</b> tastes the menu and predicts which dishes will sell. The <b>line cook</b> plates the dish and sends it out. The <b>floor manager</b> checks what actually sold and tells the focus group "you were wrong about the duck." That's the loop.
+  </p>
+</div>
+
+<h2>The five modules, in order</h2>
+
+<div class="pipe">
+
+  <div class="stage" data-mod="persona">
+    <div class="badge">1</div>
+    <div>
+      <h4><a href="module-persona.html">persona</a> — picks the voice</h4>
+      <p class="one">Who is doing the talking? Bootstrap a character (e.g. "Ashton from the farm"), test their voice for consistency, export them.</p>
+      <div class="flow"><span class="in">in:</span> a description &nbsp;·&nbsp; <span class="out">out: voice_pack.v1.json</span></div>
+    </div>
+  </div>
+
+  <div class="stage" data-mod="brand">
+    <div class="badge">2</div>
+    <div>
+      <h4><a href="module-brand.html">brand</a> — writes the plan</h4>
+      <p class="one">Given the brand definition and a topic, write a campaign brief: what's the angle, what's the CTA, which platforms, what policy guardrails.</p>
+      <div class="flow"><span class="in">in:</span> voice_pack.v1 + brand.md + a topic &nbsp;·&nbsp; <span class="out">out: brief.v1.json</span></div>
+    </div>
+  </div>
+
+  <div class="stage" data-mod="forecast">
+    <div class="badge">3</div>
+    <div>
+      <h4><a href="module-forecast.html">forecast</a> — predicts the reaction</h4>
+      <p class="one">Simulate a crowd of fake audience members and see how they would react to the brief. Returns scenarios with confidence scores. This is the most novel module.</p>
+      <div class="flow"><span class="in">in:</span> brief.v1 + supporting docs &nbsp;·&nbsp; <span class="out">out: forecast.v1.json</span></div>
+    </div>
+  </div>
+
+  <div class="stage" data-mod="studio">
+    <div class="badge">4</div>
+    <div>
+      <h4><a href="module-studio.html">studio</a> — makes and ships the post</h4>
+      <p class="one">Render the actual image or video, draft copy, publish to Twitter/LinkedIn/Meta/Threads. TypeScript, not Python.</p>
+      <div class="flow"><span class="in">in:</span> brief.v1 + brand assets &nbsp;·&nbsp; <span class="out">out: run_result.v1.json</span></div>
+    </div>
+  </div>
+
+  <div class="stage" data-mod="metrics">
+    <div class="badge">5</div>
+    <div>
+      <h4><a href="module-metrics.html">metrics</a> — measures and calibrates</h4>
+      <p class="one">Take the realized engagement data, normalize it, then compare against the forecast to update priors. This closes the loop.</p>
+      <div class="flow"><span class="in">in:</span> run_result.v1 + actual engagement &nbsp;·&nbsp; <span class="out">out: performance.v1.json</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="callout">
+  <b>The key idea:</b> The boxes don't call each other's functions. They write JSON files to disk, validated against a schema. That's why you can re-run any stage independently, replay an old forecast with new data, or swap one module for a different implementation entirely. It's <i>schema-first</i> design — rare in AI repos.
+</div>
+
+<h2>Pick a module to go deeper</h2>
+
+<div class="nav">
+  <a class="persona" href="module-persona.html">1 · persona</a>
+  <a class="brand" href="module-brand.html">2 · brand</a>
+  <a class="forecast" href="module-forecast.html">3 · forecast</a>
+  <a class="studio" href="module-studio.html">4 · studio</a>
+  <a class="metrics" href="module-metrics.html">5 · metrics</a>
+</div>
+
+<h2>What this looks like for Shepherd Boy Farms</h2>
+
+<p>You and I just did stages 1 and partially 2 in this session:</p>
+
+<div class="pre">
+<span class="c"># Stage 1 — created Ashton, the farm voice</span>
+$ uv run agentcy persona create <span class="v">"Ashton from Shepherd Boy Farms..."</span> --name <span class="v">ashton</span>
+<span class="c">→ saved to ~/.prsna/personas/ashton.yaml</span>
+
+<span class="c"># Exported as voice_pack.v1 into the brand folder</span>
+$ uv run agentcy persona export ashton --to <span class="v">voice_pack.v1</span>
+<span class="c">→ brands/shepherdboyfarms/input/voice_pack.v1.json (2597 bytes)</span>
+
+<span class="c"># Stage 2 — brand definition (hand-authored from scraped site)</span>
+<span class="c">→ brands/shepherdboyfarms/brand.md  (positioning, audiences, pillars, voice)</span>
+<span class="c">→ brands/shepherdboyfarms/design.md (palette, typography, image prompt)</span>
+
+<span class="c"># Stages 3–5 are still ahead — would run as:</span>
+$ uv run agentcy brand plan run <span class="v">"freeze-dried vs kibble"</span> --brand <span class="v">shepherdboyfarms</span> --json
+$ uv run agentcy forecast run --files <span class="v">docs/</span> --brief <span class="v">brief.v1.json</span> --json
+$ uv run agentcy studio run <span class="v">social.post</span> --brand <span class="v">shepherdboyfarms</span> --brief-file <span class="v">...</span> --json
+$ uv run agentcy metrics adapt --run-result <span class="v">...</span> --sidecar <span class="v">engagement.json</span> --json
+</div>
+
+<h2>How to judge quality</h2>
+
+<p>When you compare this to other "AI creative" repos you've seen, look at three things:</p>
+
+<p><b>1. Are the boundaries typed?</b> Here they are — five JSON Schemas in <code>src/agentcy/protocols/schemas/</code>. Most repos pass dicts around and the shape drifts. This one rejects an artifact if it doesn't match the schema. That's the difference between a prototype and a platform.</p>
+
+<p><b>2. Is there a feedback loop?</b> Here, yes — <code>metrics calibrate</code> reads both the forecast and the realized performance and updates priors. Most repos only generate. This one learns.</p>
+
+<p><b>3. Is the audience model real?</b> Here, yes — <code>forecast</code> is a 66-file graph-and-swarm simulation built on camel-ai/oasis with its own ontology generator. Most repos "ask GPT to roleplay an audience." This one builds a network of agents with memory and watches them interact.</p>
+
+<footer>
+  generated · 2026-05-12 · open <code>module-*.html</code> for the deeper dives · numbers pulled from your local repo, not invented
+</footer>
+
+</div>
+</body>
+</html>

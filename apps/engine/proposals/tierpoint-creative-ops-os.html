@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Creative Production OS — A proposal for TierPoint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF8F3;
+    --ink:#1A1A1A;
+    --navy:#0B2E5A;
+    --navy-lt:#C9D5E8;
+    --gold:#B8A340;
+    --gold-bg:#FFFCEF;
+    --gold-deep:#8A6F1A;
+    --border:#D6CFB8;
+    --border-lt:#E8E2CC;
+    --paper:#FFFFFF;
+    --dim:#6B6B6B;
+    --dim2:#4A4A4A;
+    --text2:#2A2A2A;
+    --serif:'Source Serif Pro', Georgia, serif;
+    --sans:'Inter', -apple-system, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:var(--serif);
+    font-size:17px; line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* doc bar */
+  .doc-bar{ background:var(--navy); color:#FFFFFF; padding:10px 0; }
+  .doc-bar-inner{
+    max-width:880px; margin:0 auto; padding:0 32px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase;
+  }
+  .doc-bar .left{ color:var(--navy-lt); }
+  .doc-bar .right{ color:#FFFFFF; }
+
+  .wrap{ max-width:880px; margin:0 auto; padding:0 32px; }
+
+  section{ padding:44px 0; }
+  section.cover{ padding:72px 0 56px; border-bottom:2px solid var(--navy); }
+
+  /* cover */
+  .cover .meta-line{
+    font-family:var(--sans); font-size:12px; font-weight:600;
+    color:var(--dim); text-transform:uppercase; letter-spacing:.12em;
+    margin-bottom:24px;
+  }
+  .cover .meta-line .dot{ color:var(--gold); padding:0 8px; }
+  .cover h1{
+    font-family:var(--serif); font-weight:700; font-size:48px;
+    line-height:1.1; color:var(--navy);
+    margin:0 0 18px; letter-spacing:-.01em;
+  }
+  .cover .subtitle{
+    font-family:var(--serif); font-size:21px; line-height:1.45;
+    color:var(--dim2); margin:0 0 28px; max-width:720px;
+  }
+  .cover .byline{
+    font-family:var(--sans); font-size:13px; font-weight:500;
+    color:var(--dim);
+  }
+  .cover .byline strong{ color:var(--ink); font-weight:700; }
+
+  /* section eyebrow + numbering */
+  .eyebrow{
+    font-family:var(--sans); font-size:12px; font-weight:700;
+    letter-spacing:.12em; text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 12px;
+  }
+  .eyebrow.navy{ color:var(--navy); }
+
+  h2{
+    font-family:var(--serif); font-weight:700; font-size:30px;
+    line-height:1.2; color:var(--navy);
+    margin:0 0 18px; letter-spacing:-.005em;
+  }
+  h3{
+    font-family:var(--serif); font-weight:600; font-size:21px;
+    color:var(--ink); margin:28px 0 12px;
+  }
+  h4{
+    font-family:var(--sans); font-weight:700; font-size:14px;
+    color:var(--navy); margin:22px 0 10px;
+    letter-spacing:.02em;
+  }
+  p{ margin:0 0 14px; }
+  strong{ font-weight:700; color:var(--navy); }
+  a{ color:var(--navy); border-bottom:1px solid rgba(11,46,90,0.3); text-decoration:none; }
+  code{ font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:14px; color:var(--navy); background:var(--gold-bg); padding:1px 5px; border-radius:2px; }
+
+  /* lists */
+  ul,ol{ padding-left:22px; margin:0 0 18px; }
+  ul li, ol li{ margin-bottom:10px; }
+  ul li::marker{ color:var(--gold); }
+  ol li::marker{ color:var(--gold); font-weight:700; }
+
+  /* TL;DR box */
+  .tldr{
+    background:#FFFFFF; border:3px solid #000000; border-left-width:8px;
+    padding:24px 28px; margin:24px 0;
+  }
+  .tldr .label{
+    font-family:var(--sans); font-size:11px; font-weight:700;
+    color:var(--navy); margin-bottom:14px;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  .tldr ul{ margin:0; padding-left:20px; }
+  .tldr ul li{
+    margin-bottom:10px; font-size:16px; line-height:1.55;
+    color:var(--text2);
+  }
+  .tldr ul li:not(:last-child){
+    padding-bottom:10px; border-bottom:1px solid var(--border-lt);
+  }
+  .tldr ul li strong{ color:var(--navy); }
+  .tldr.no-list p{ font-size:16px; line-height:1.6; color:var(--text2); margin:0; }
+
+  /* anchor box (gold callout) */
+  .anchor-box{
+    background:var(--gold-bg); border:3px solid var(--gold);
+    padding:22px 28px; margin:22px 0;
+  }
+  .anchor-box .label{
+    font-family:var(--sans); font-size:11px; font-weight:700;
+    color:var(--gold-deep); margin-bottom:12px;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  .anchor-box p{
+    color:var(--text2); font-size:16px; line-height:1.6; margin:0;
+  }
+  .anchor-box p strong{ color:var(--navy); }
+
+  /* tables */
+  table{
+    width:100%; border-collapse:collapse; background:#FFFFFF;
+    border:3px solid #000000; margin:20px 0;
+  }
+  thead th{
+    background:var(--navy); color:#FFFFFF;
+    border-bottom:3px solid #000000;
+    padding:14px 20px;
+    font-family:var(--sans); font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.08em;
+    text-align:left;
+  }
+  tbody td{
+    padding:14px 20px; border-bottom:1px solid var(--border-lt);
+    font-size:15px; line-height:1.55; vertical-align:top;
+    color:var(--text2);
+  }
+  tbody td:first-child{ font-weight:600; color:var(--ink); }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  /* blockquote */
+  blockquote{
+    margin:24px 0; padding:6px 0 6px 20px;
+    border-left:4px solid var(--gold);
+    font-family:var(--serif); font-style:italic;
+    font-size:18px; line-height:1.55; color:var(--text2);
+  }
+
+  hr{ border:none; border-top:1px solid var(--border); margin:32px 0; }
+
+  /* SVG diagram container */
+  .diagram{
+    background:#FFFFFF; border:1px solid var(--border);
+    padding:20px; margin:22px 0;
+  }
+  .diagram svg{ display:block; width:100%; height:auto; }
+  .diagram-caption{
+    font-family:var(--sans); font-size:12px; color:var(--dim);
+    text-align:center; margin-top:8px;
+  }
+
+  /* chain (typed schema flow) */
+  .chain{
+    font-family:ui-monospace,'SF Mono',Menlo,monospace;
+    font-size:13px; line-height:1.7; color:var(--navy);
+    background:var(--gold-bg); border:1px solid var(--gold);
+    padding:14px 18px; margin:18px 0;
+  }
+
+  /* module sub-section spacing */
+  .module{ margin-top:36px; }
+  .module h3 .num{
+    font-family:var(--sans); font-weight:700; font-size:12px;
+    color:var(--gold); letter-spacing:.12em;
+    margin-right:10px; vertical-align:middle;
+  }
+
+  /* appendix */
+  section.appendix{
+    border-top:2px solid var(--navy);
+    padding-top:40px; margin-top:48px;
+  }
+  .appendix-grp{ margin-bottom:18px; }
+  .appendix-grp h4{
+    margin:0 0 4px; font-family:var(--sans); font-weight:700;
+    font-size:13px; color:var(--ink); letter-spacing:0;
+  }
+  .appendix-grp p{
+    margin:0; font-family:ui-monospace,'SF Mono',Menlo,monospace;
+    font-size:12px; line-height:1.7; color:var(--dim);
+  }
+
+  /* mobile */
+  @media (max-width:640px){
+    .wrap, .doc-bar-inner{ padding:0 20px; }
+    section{ padding:32px 0; }
+    section.cover{ padding:48px 0 40px; }
+    .cover h1{ font-size:36px; }
+    .cover .subtitle{ font-size:18px; }
+    h2{ font-size:24px; }
+    h3{ font-size:19px; }
+    body{ font-size:16px; }
+    .doc-bar-inner{ font-size:10px; letter-spacing:.12em; }
+    thead th, tbody td{ padding:10px 12px; font-size:13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="doc-bar">
+  <div class="doc-bar-inner">
+    <span class="left">PROPOSAL &middot; CONFIDENTIAL</span>
+    <span class="right">PREPARED FOR TIERPOINT</span>
+  </div>
+</div>
+
+<!-- COVER -->
+<section class="cover">
+  <div class="wrap">
+    <div class="meta-line">MAY 2026<span class="dot">&middot;</span>MARKETERHIRE &times; TIERPOINT<span class="dot">&middot;</span>CREATIVE OPERATIONS</div>
+    <h1>AI Creative Production OS</h1>
+    <p class="subtitle">Turn creative ops from reactive service into a disciplined system &mdash; one typed brief, one policy engine, one closed measurement loop.</p>
+  </div>
+</section>
+
+<!-- INTRO -->
+<section>
+  <div class="wrap">
+    <p>This proposal lays out a creative operations platform purpose-built for B2B marketing teams whose throughput is bottlenecked not by talent, but by coordination. The argument is short: every brief that arrives at TierPoint already contains the information needed to produce, gate, publish, and measure the work &mdash; but that information is re-typed three times, dropped between tools, and disconnected from the engagement data it generates. The OS encodes the brief once and lets every downstream step read from it.</p>
+    <p>The result is not "more AI." It is a measurable shift from a creative queue to a creative system &mdash; with the same designers, the same agencies, the same Creative Manager, doing the same five jobs, but with the coordination tax removed.</p>
+  </div>
+</section>
+
+<hr class="wrap-hr" style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §01 THE STRUCTURAL GAP -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 01 &middot; The problem</p>
+    <h2>The structural gap</h2>
+    <p>Creative ops at most B2B teams isn't broken because people aren't trying &mdash; it's broken because three layers don't connect.</p>
+
+    <h4>Intake &mdash; mismatched information at the door</h4>
+    <p>Requests arrive in Slack, email, and three different forms. The same brief gets rewritten three times before anyone draws a pixel.</p>
+
+    <h4>Execution &mdash; producers in silos</h4>
+    <p>Designers, copywriters, and outside agencies work to different versions of the truth. QA happens only at delivery &mdash; when changing course is most expensive.</p>
+
+    <h4>Measurement &mdash; performance lives elsewhere</h4>
+    <p>Engagement data sits in Looker and GA, disconnected from the creative artifact that produced it. You can't learn from work you can't trace.</p>
+
+    <blockquote>The result: a queue, not a system. Throughput depends on a single PM's attention.</blockquote>
+
+    <h3>Same five jobs. Two different operating modes.</h3>
+    <p>Nothing in this proposal is about doing less work. It is about removing the coordination tax on the work that already happens. Here is what changes, stage by stage.</p>
+
+    <div class="tldr">
+      <div class="label">Before &rarr; After</div>
+      <ul>
+        <li><strong>Intake.</strong> Slack / email / forms; brief rewritten 3&times; &rarr; one typed brief schema; written once, read everywhere.</li>
+        <li><strong>Brief.</strong> Prose document; interpretation varies &rarr; 11-field artifact with objective, voice pack, policy verdict.</li>
+        <li><strong>Produce.</strong> Designers + agencies on parallel tracks &rarr; orchestrated handoff; one typed brief as source of truth, assets land in your DAM with lineage.</li>
+        <li><strong>QA.</strong> Manual review at the end &rarr; eval rubric at every gate; auto-heal on first failure.</li>
+        <li><strong>Measure.</strong> Weekly fire drill in Looker &rarr; <code>performance.v1</code> sidecar from your existing analytics; calibration report becomes the input for the next brief.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<hr style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §02 WHAT THIS IS -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 02 &middot; Positioning</p>
+    <h2>The AI Creative Production OS</h2>
+
+    <div class="anchor-box">
+      <div class="label">In one sentence</div>
+      <p>A <strong>typed creative operations platform</strong> that turns every brief into a measurable artifact and every workflow into a self-improving system.</p>
+    </div>
+
+    <h4>Typed artifact spine</h4>
+    <p>Five JSON Schemas connect <strong>brief &rarr; voice &rarr; produce &rarr; run &rarr; performance</strong>. Every step emits something the next step can read.</p>
+
+    <h4>Full coordination</h4>
+    <p>Internal designers, outside agencies, and freelancers all plug into the same brief, the same review gates, the same DAM lineage.</p>
+
+    <h4>Human over the loop</h4>
+    <p>QA happens automatically at every gate; the Creative Manager reviews only what fails. Quality is enforced, not policed.</p>
+
+    <h3>Architecture in one diagram</h3>
+    <p>Every box emits a typed JSON artifact. Every arrow is a schema, not a function call. Modules are independently replaceable.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 1080 220" role="img" aria-label="Creative OS architecture diagram">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#0B2E5A"/>
+          </marker>
+          <marker id="arrGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#B8A340"/>
+          </marker>
+        </defs>
+        <g font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#1A1A1A">
+          <rect x="10"   y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="65"  y="88" text-anchor="middle">intake</text>
+          <rect x="140"  y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="195" y="88" text-anchor="middle">brief</text>
+          <rect x="270"  y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="325" y="88" text-anchor="middle">voice</text>
+          <rect x="400"  y="60" width="150" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="475" y="88" text-anchor="middle">produce / orchestrate</text>
+          <rect x="570"  y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="625" y="88" text-anchor="middle">review</text>
+          <rect x="700"  y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="755" y="88" text-anchor="middle">publish</text>
+          <rect x="830"  y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="885" y="88" text-anchor="middle">measure</text>
+          <rect x="960"  y="60" width="110" height="46" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/><text x="1015" y="88" text-anchor="middle">calibrate</text>
+        </g>
+        <g stroke="#0B2E5A" stroke-width="1.6" fill="none" marker-end="url(#arr)">
+          <line x1="120" y1="83" x2="138" y2="83"/>
+          <line x1="250" y1="83" x2="268" y2="83"/>
+          <line x1="380" y1="83" x2="398" y2="83"/>
+          <line x1="550" y1="83" x2="568" y2="83"/>
+          <line x1="680" y1="83" x2="698" y2="83"/>
+          <line x1="810" y1="83" x2="828" y2="83"/>
+          <line x1="940" y1="83" x2="958" y2="83"/>
+        </g>
+        <path d="M1015 106 V 160 H 195 V 106" stroke="#B8A340" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#arrGold)"/>
+        <text x="600" y="178" text-anchor="middle" fill="#8A6F1A" font-family="Inter, system-ui, sans-serif" font-style="italic" font-size="12">calibration report &rarr; read by Creative Manager &rarr; next brief</text>
+      </svg>
+    </div>
+    <p class="diagram-caption">Five typed schemas: <code>voice_pack.v1</code> &middot; <code>brief.v1</code> &middot; <code>forecast.v1</code> &middot; <code>run_result.v1</code> &middot; <code>performance.v1</code></p>
+  </div>
+</section>
+
+<hr style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §03 SEVEN MODULES -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 03 &middot; The system, module by module</p>
+    <h2>The seven modules</h2>
+    <p>The OS is composed of seven independently replaceable modules. Each module reads a typed artifact from the prior step and emits one to the next. Below: what each module does, and the outcome it produces.</p>
+
+    <!-- 3.1 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.1 &middot; Intake &amp; briefing</p>
+      <h3>Briefs get written once.</h3>
+      <p>The brief is the contract. Every downstream tool reads it; no one rewrites it.</p>
+      <ul>
+        <li><strong>Standardized brief template</strong> &mdash; a typed schema with 11 required fields: objective, signal, strategy, policy verdict, creative direction, deliverables, voice_pack_id, brand_id, channel, success metric, deadline.</li>
+        <li><strong>Auto-derivation</strong> &mdash; stakeholder submits a one-line ask; the system drafts a full brief from brand context, prior briefs, and policy. The Creative Manager confirms &mdash; not composes.</li>
+        <li><strong>Single source of truth</strong> &mdash; one typed brief, referenced by ID downstream across every channel and producer. No more "wait, which version?"</li>
+      </ul>
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>Stakeholders submit requests <strong>once</strong>, in a structured format. Briefs stop drifting between revisions.</p>
+      </div>
+    </div>
+
+    <!-- 3.2 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.2 &middot; Voice governance</p>
+      <h3>Brand voice as code, not as PDF.</h3>
+      <p>The brand book is the most-cited, least-read document at every company. We make it executable.</p>
+      <ul>
+        <li><strong>Typed voice pack</strong> &mdash; per brand and per audience: tone, style, do/don't rules, lexicon, example responses, banned claims.</li>
+        <li><strong>Drift detection</strong> &mdash; every drafted piece is scored against the pack. Out-of-tolerance content auto-flags before it reaches a human reviewer.</li>
+        <li><strong>Self-tuning voice</strong> &mdash; an evolutionary algorithm tests dozens of prompt variants against your labeled examples each cycle and keeps the ones that score best on voice fidelity, claim safety, and clarity simultaneously. Your brand voice gets sharper with use, not staler.</li>
+      </ul>
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>Your voice is <strong>enforceable, measurable, and evolvable</strong> &mdash; not a PDF nobody reads.</p>
+      </div>
+    </div>
+
+    <!-- 3.3 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.3 &middot; Copy QA at scale</p>
+      <h3>Self-serve copy, on rails.</h3>
+      <p>Most copy requests at a B2B company are routine: a feature blurb, an email subject line, a one-pager headline. They shouldn't burn a Creative Manager's calendar. Four moves make this safe:</p>
+      <ol>
+        <li><strong>Constraints &mdash; voice pack as the input.</strong> Tone, lexicon, claims policy, audience profile fed into the draft step as hard constraints.</li>
+        <li><strong>Gate &mdash; eval rubric scores.</strong> Voice fidelity, on-brand, claim safety, hook strength. Each scored 0&ndash;1; thresholds set per channel.</li>
+        <li><strong>Recovery &mdash; auto-heal once.</strong> On failure, the system patches the draft against the failing rubric and retries &mdash; exactly once, with reasoning logged.</li>
+        <li><strong>Human gate &mdash; escalation queue.</strong> Anything that still fails routes to the Creative Manager with the rubric trace attached. No blind reviews.</li>
+      </ol>
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>Teams self-serve copy responsibly. The Creative Manager is the <strong>quality gate, not the bottleneck</strong>.</p>
+      </div>
+    </div>
+
+    <!-- 3.4 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.4 &middot; Designer + agency workflow</p>
+      <h3>Designers and agencies, in the system.</h3>
+      <p>Visuals and complex layouts are produced by your internal designers and outside partners. We don't replace them &mdash; we make them legible.</p>
+      <ul>
+        <li><strong>Typed brief as the handoff artifact</strong> &mdash; one structured brief (audience, voice pack, deliverable specs, deadline) becomes the input every producer reads, whether they work in Figma, Adobe CC, or off-platform. Tool-specific surfaces (Figma plugin, Adobe panel) are scoped during configuration based on your designers' workflows.</li>
+        <li><strong>Capacity + timelines</strong> &mdash; every brief produces a Monday/Asana ticket with owner, due date, and dependency on upstream gates. No spreadsheets.</li>
+        <li><strong>Review gates</strong> &mdash; drafts route to Brand &amp; Creative leadership via the same policy engine that gates copy. One approval surface, not five.</li>
+        <li><strong>DAM lineage</strong> &mdash; final assets push into your DAM tagged with brief ID, voice pack ID, and approval history. Every asset traceable to its origin.</li>
+      </ul>
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>Internal designers, external agencies, and freelancers stop being a coordination tax. They become <strong>legible, accountable production capacity</strong>.</p>
+      </div>
+    </div>
+
+    <!-- 3.5 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.5 &middot; Review gates &amp; policy</p>
+      <h3>Every output passes one policy engine.</h3>
+      <p>Copy or asset, internal or agency &mdash; same three-lane verdict. Reasons are logged. Appeals are auditable.</p>
+
+      <div class="diagram">
+        <svg viewBox="0 0 1080 230" role="img" aria-label="Policy engine three-lane diagram">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0B2E5A"/></marker>
+            <marker id="arr2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#B8A340"/></marker>
+            <marker id="arr2k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1A1A1A"/></marker>
+          </defs>
+          <g font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#1A1A1A">
+            <rect x="30" y="85" width="170" height="50" rx="2" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+            <text x="115" y="115" text-anchor="middle">draft + rubric</text>
+            <rect x="270" y="85" width="170" height="50" rx="2" fill="#FFFCEF" stroke="#0B2E5A" stroke-width="1.6"/>
+            <text x="355" y="115" text-anchor="middle">policy engine</text>
+            <line x1="200" y1="110" x2="268" y2="110" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr2)"/>
+
+            <rect x="560" y="20"  width="200" height="50" rx="2" fill="#FFFCEF" stroke="#B8A340" stroke-width="2"/>
+            <text x="660" y="50" text-anchor="middle" fill="#0B2E5A">ALLOW &rarr; publish</text>
+
+            <rect x="560" y="90"  width="200" height="50" rx="2" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="2"/>
+            <text x="660" y="120" text-anchor="middle" fill="#0B2E5A">ESCALATE &rarr; human review</text>
+
+            <rect x="560" y="160" width="200" height="50" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+            <text x="660" y="190" text-anchor="middle" fill="#1A1A1A">DENY &rarr; auto-heal once</text>
+
+            <line x1="440" y1="110" x2="558" y2="45"  stroke="#B8A340" stroke-width="1.6" marker-end="url(#arr2g)"/>
+            <line x1="440" y1="110" x2="558" y2="115" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr2)"/>
+            <line x1="440" y1="110" x2="558" y2="185" stroke="#1A1A1A" stroke-width="1.6" marker-end="url(#arr2k)"/>
+
+            <path d="M760 185 V 220 H 355 V 135" stroke="#1A1A1A" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arr2k)"/>
+          </g>
+        </svg>
+      </div>
+      <p class="diagram-caption">Eval rubric scores attach to every verdict. Failing drafts auto-heal once before escalating. Every approve / reject logged with reason.</p>
+
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>One policy engine governs <strong>every</strong> creative output &mdash; copy, visual, internal, agency &mdash; with full reason trace and appeal history.</p>
+      </div>
+    </div>
+
+    <!-- 3.6 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.6 &middot; Audit &amp; lineage</p>
+      <h3>Every asset, traceable to its origin.</h3>
+      <p>Five typed JSON Schemas form a chain. Pick any asset; walk backwards to the brief, the voice pack, the policy verdict, the reviewer.</p>
+      <div class="chain">voice_pack.v1 &nbsp;&rarr;&nbsp; brief.v1 &nbsp;&rarr;&nbsp; forecast.v1 &nbsp;&rarr;&nbsp; run_result.v1 &nbsp;&rarr;&nbsp; performance.v1</div>
+      <ul>
+        <li><strong>Who made this</strong> &mdash; brief author, voice pack version, draft model, reviewer, approval timestamp.</li>
+        <li><strong>Why</strong> &mdash; the source signal, the strategy, the policy verdict and its reasons.</li>
+        <li><strong>What happened</strong> &mdash; published surface, engagement metrics, calibration delta vs forecast.</li>
+      </ul>
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>Answer "<strong>who made this, why, and what happened</strong>" for any creative output ever produced. Defensible to legal, repeatable for the next campaign.</p>
+      </div>
+    </div>
+
+    <!-- 3.7 -->
+    <div class="module">
+      <p class="eyebrow">Module 3.7 &middot; Measurement loop</p>
+      <h3>The system reports on itself.</h3>
+      <p>Three commands produce the audit + calibration the Creative Manager needs to shape the next brief.</p>
+      <ul>
+        <li><strong><code>metrics adapt</code></strong> &mdash; takes <code>run_result.v1</code> plus a sidecar of realized engagement numbers (brought in from whatever analytics surface your team uses) and emits <code>performance.v1</code>, the canonical post-campaign artifact.</li>
+        <li><strong><code>metrics calibrate</code></strong> &mdash; reads <code>performance.v1</code> against the original <code>forecast.v1</code> and produces an alignment report: which predicted outcomes matched, which missed, and why.</li>
+        <li><strong><code>metrics study</code></strong> &mdash; pipeline-wide retrospective combining forecast accuracy, voice consistency, and creative effectiveness into a single readable artifact.</li>
+      </ul>
+      <div class="anchor-box">
+        <div class="label">Outcome</div>
+        <p>Reports stop being weekly fire drills. The system produces the audit trail; the <strong>Creative Manager reads the calibration and shapes the next brief</strong>. Human-in-the-strategy, system-in-the-mechanics.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §04 SYSTEM REACH -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 04 &middot; Scope</p>
+    <h2>What the OS produces &mdash; and what it orchestrates</h2>
+    <p>Clear lines. The OS doesn't pretend to render hero film. It does make sure every hero film traces back to a brief, a voice pack, and a measurable outcome.</p>
+
+    <h3>Produced directly</h3>
+    <p>AI-driven, human-gated. These outputs are generated inside the OS and gated by the policy engine before they ship.</p>
+    <ul>
+      <li>Web copy and landing-page modules</li>
+      <li>Email copy and sequences</li>
+      <li>Social posts (organic LinkedIn, X, threads)</li>
+      <li>Blog drafts and long-form outlines</li>
+      <li>Sales-enablement headlines and one-pager copy</li>
+      <li>Outreach and reply drafts</li>
+      <li>Typographic sales cards (card lab)</li>
+    </ul>
+
+    <h3>Orchestrated</h3>
+    <p>Briefed, tracked, and QA'd by the OS &mdash; produced by your team or partners. The OS provides the brief, the gate, and the lineage; your designers and agencies provide the craft.</p>
+    <ul>
+      <li>Visual ads and paid creative</li>
+      <li>Complex multi-layer layouts and brand campaigns</li>
+    </ul>
+
+    <blockquote>We don't replace your designers &mdash; we make them legible and accountable.</blockquote>
+  </div>
+</section>
+
+<hr style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §05 DAY IN LIFE -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 05 &middot; Day-in-life</p>
+    <h2>The Creative Manager, re-shaped</h2>
+    <p>The JD splits the role 70&ndash;75% creative ops, 25&ndash;30% hands-on copy. Both halves change.</p>
+
+    <h3>70% &mdash; creative ops</h3>
+    <table>
+      <thead>
+        <tr><th style="width:24%">Activity</th><th>Today</th><th>With the system</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Triage requests</td><td>Slack / email / forms chaos</td><td>Standardized intake form</td></tr>
+        <tr><td>Status chasing</td><td>DM-by-DM check-ins</td><td>Real-time run state dashboard</td></tr>
+        <tr><td>Capacity</td><td>Mental math</td><td>Tracked via Monday / Asana integration</td></tr>
+        <tr><td>Briefs</td><td>Rewritten 3 times</td><td>Typed brief, written once</td></tr>
+        <tr><td>Weekly reports</td><td>Manual build</td><td><code>study</code> report auto-assembled</td></tr>
+      </tbody>
+    </table>
+
+    <h3>30% &mdash; hands-on copy</h3>
+    <table>
+      <thead>
+        <tr><th style="width:24%">Activity</th><th>Today</th><th>With the system</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>First draft</td><td>Blank page</td><td>AI draft scoped to brief + voice pack</td></tr>
+        <tr><td>Voice consistency</td><td>Gut check</td><td>Drift score per piece</td></tr>
+        <tr><td>QA</td><td>Manual edit pass</td><td>Eval rubric flags before you see it</td></tr>
+        <tr><td>Reuse</td><td>Hunt through old docs</td><td>Voice pack + retrieval layer</td></tr>
+        <tr><td>Light writing</td><td>Reactive</td><td>You steer, AI drafts</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §06 USE CASES -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 06 &middot; TierPoint use cases</p>
+    <h2>Three concrete plays in your stack</h2>
+    <p>What this looks like when it actually meets a TierPoint campaign cycle.</p>
+
+    <h3>Play 01 &middot; New data-center launch campaign</h3>
+    <p>One brief drives a coordinated paid LinkedIn flight, organic social, a sales-enablement one-pager, a blog series, and a customer-email announcement. Every asset is version-controlled to the same brief; every approval logged against the same policy verdict.</p>
+    <div class="anchor-box">
+      <div class="label">Cycle time</div>
+      <p><strong>3 weeks &rarr; 8 days.</strong> Same scope, same approvers, same designers &mdash; the difference is the brief is written once and every tool reads from it.</p>
+    </div>
+
+    <h3>Play 02 &middot; Hybrid-cloud nurture sequence</h3>
+    <p>Persona-driven email journey + LinkedIn organic + Meta retargeting. The eval rubric gates technical accuracy and claim safety <em>before</em> anything ships.</p>
+    <div class="anchor-box">
+      <div class="label">Risk posture</div>
+      <p>No more <strong>"we accidentally claimed 99.999% on a non-Tier-IV site"</strong> incidents. Claim safety is a typed check, not a reviewer's memory.</p>
+    </div>
+
+    <h3>Play 03 &middot; Sales-enablement library refresh</h3>
+    <p>Forty customer-facing one-pagers in TierPoint brand &mdash; produced in under 90 minutes via the card lab system, each tied to a specific service line and traceable to a brief.</p>
+    <div class="anchor-box">
+      <div class="label">Sales velocity</div>
+      <p>Sales gets fresh collateral <strong>without a 6-week design queue</strong>. Design capacity gets redirected to the work that actually needs design.</p>
+    </div>
+  </div>
+</section>
+
+<hr style="max-width:880px; margin-left:auto; margin-right:auto;">
+
+<!-- §07 STACK + TIMELINE + NEXT STEPS -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow navy">&sect; 07 &middot; Integration, rollout, and engagement</p>
+    <h2>Middleware, timeline, next steps</h2>
+
+    <h3>Built to live alongside your stack</h3>
+    <p>What ships native vs. what's scoped during configuration &mdash; stated plainly. The platform doesn't replace your stack; it makes the artifacts flowing through it auditable.</p>
+    <table>
+      <thead>
+        <tr><th style="width:26%">Layer</th><th>What's in scope</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Published natively</strong></td><td>Twitter &middot; LinkedIn &middot; Meta &middot; Facebook &middot; Threads &mdash; direct API adapters. Posts ship with full lineage, no aggregator middleware.</td></tr>
+        <tr><td>DAM push</td><td>Frame.io &middot; Brandfolder &middot; Box &middot; Bynder &mdash; rendered deliverables push to your DAM via REST. Scoped during onboarding; typical 1&ndash;2 weeks per DAM.</td></tr>
+        <tr><td>Other tools</td><td>Figma &middot; Adobe Creative Cloud &middot; Slack &middot; Teams &middot; Monday &middot; Asana &middot; Jira &mdash; custom integrations scoped during the 4&ndash;6 week configuration phase based on what TierPoint runs.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Deployment &amp; engagement model</h3>
+    <p>The platform is deployed and operated by us. Your Creative Manager interacts through the tools your team already uses &mdash; not a terminal. This is software-defined creative ops, sold as a service.</p>
+
+    <table>
+      <thead>
+        <tr><th style="width:26%">Layer</th><th>How it works</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Platform</strong></td><td>Deployed in your cloud or ours. SQLite-backed run engine, typed artifacts, policy gates &mdash; all server-side. No installation on your team's machines.</td></tr>
+        <tr><td><strong>Operator</strong></td><td>A creative operations engineer on our team runs the platform on your behalf. They join your stand-ups, take requests in Slack, and own the day-to-day mechanics. Think embedded specialist, not vendor on retainer.</td></tr>
+        <tr><td><strong>Creative Manager</strong></td><td>Sends briefs in Slack or shared docs. Reviews drafts in Google Docs or Notion. Approves rendered creative in the channels you already use. Owns strategy and judgment.</td></tr>
+        <tr><td><strong>Brand &amp; Creative leadership</strong></td><td>Reviews escalations and calibration reports the platform produces. Sets the policy boundaries the system operates inside.</td></tr>
+        <tr><td>Self-serve surfaces</td><td>Custom UI surfaces (intake form, asset gallery, approval queue) are built during the engagement based on what your team actually wants to operate hands-on.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="anchor-box">
+      <div class="label">What this means in plain terms</div>
+      <p>You're not buying a tool your team has to learn. You're <strong>hiring a service backed by a platform</strong>. The CLI stays on our side. Your Creative Manager keeps the job description, with more capacity and better instruments.</p>
+    </div>
+
+    <h3>30 / 60 / 90 &middot; a closed loop in a quarter</h3>
+    <p>A ninety-day path from first typed brief to a closed measurement loop.</p>
+    <div class="tldr">
+      <div class="label">Rollout ladder</div>
+      <ul>
+        <li><strong>Day 30 &middot; Foundation live.</strong> Brand kit + voice pack live. Briefing process standardized. First three creative briefs flowing through the typed pipeline end-to-end.</li>
+        <li><strong>Day 60 &middot; Production at scale.</strong> Production workflows live for the top three channels (paid social, organic, email). 50% of routine copy auto-produced and human-gated. Designer + agency workflow live through typed briefs and Monday/Asana ticketing; tool-specific plugins prioritized per your stack.</li>
+        <li><strong>Day 90 &middot; Loop running.</strong> Full audit lineage end-to-end. Measurement loop running for one full campaign cycle. Calibration report read by Brand &amp; Creative leadership; findings shape the next quarter's briefs.</li>
+      </ul>
+    </div>
+
+    <h3>Three ways to start</h3>
+    <p>Pick the entry point that fits where TierPoint marketing is today.</p>
+    <ol>
+      <li><strong>60-minute working session</strong> &mdash; with Brand &amp; Creative leadership. We walk one of your current campaigns through the OS live, surface the gaps, and leave you with a one-page audit.</li>
+      <li><strong>4-week scoped pilot</strong> &mdash; one campaign type (e.g. data-center launch). Brief &rarr; produce &rarr; measure. Outcome: a closed-loop reference case in your stack, with metrics, that the Creative Manager can run from.</li>
+      <li><strong>Architecture deep-dive</strong> &mdash; for IT and data-security review. Schema specs, deployment topology, secrets handling, audit log shape. Everything your CISO will ask about.</li>
+    </ol>
+
+    <div class="anchor-box">
+      <div class="label">Engagement model</div>
+      <p>Start with a <strong>scoped pilot</strong> on one campaign type. In four weeks, TierPoint has a closed-loop reference case &mdash; brief, run, performance, calibration &mdash; that the Creative Manager can operate independently. From there, modules expand to additional channels at the pace your team chooses.</p>
+    </div>
+
+    <p style="margin-top:24px; font-family:var(--sans); font-size:13px; color:var(--dim);">Contact &mdash; [Name] &middot; [Email] &middot; [Phone]</p>
+  </div>
+</section>
+
+
+</body>
+</html>

@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Creative Production OS · Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF8F3;
+  --ink:#1A1A1A;
+  --navy:#0B2E5A;
+  --navy-lt:#C9D5E8;
+  --gold:#B8A340;
+  --gold-bg:#FFFCEF;
+  --gold-deep:#8A6F1A;
+  --border:#D6CFB8;
+  --border-lt:#E8E2CC;
+  --paper:#FFFFFF;
+  --dim:#6B6B6B;
+  --dim2:#4A4A4A;
+  --text2:#2A2A2A;
+  --serif:"Source Serif Pro", Georgia, serif;
+  --sans:"Inter", -apple-system, system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font:400 17px/1.65 var(--serif);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Doc bar */
+.docbar{
+  background:var(--navy);
+  color:#fff;
+  padding:12px 32px;
+  display:flex; justify-content:space-between; align-items:center;
+  font:600 11px/1 var(--sans);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.docbar .left{color:var(--navy-lt)}
+.docbar .right{color:#fff}
+
+/* Container */
+.wrap{max-width:880px; margin:0 auto; padding:0 32px}
+
+/* Cover */
+.cover{
+  padding:72px 0 56px;
+  border-bottom:2px solid var(--navy);
+}
+.meta-line{
+  font:600 12px/1 var(--sans);
+  color:var(--dim);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:28px;
+}
+.meta-line .dot{color:var(--gold); margin:0 10px}
+h1.cover-h1{
+  font:700 48px/1.1 var(--serif);
+  color:var(--navy);
+  margin:0 0 20px;
+  letter-spacing:-.01em;
+}
+.cover-sub{
+  font:400 21px/1.45 var(--serif);
+  color:var(--dim2);
+  margin:0 0 36px;
+  max-width:780px;
+}
+.byline{
+  font:500 14px/1.6 var(--sans);
+  color:var(--dim);
+}
+.byline strong{color:var(--text2); font-weight:600}
+
+/* Section */
+section.body-section{
+  padding:44px 0;
+  border-bottom:1px solid var(--border-lt);
+}
+section.body-section:last-of-type{border-bottom:none}
+.eyebrow-top{
+  font:700 12px/1 var(--sans);
+  color:var(--gold);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  margin:0 0 14px;
+}
+.eyebrow-sub{
+  font:600 12px/1 var(--sans);
+  color:var(--gold);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  margin:0 0 8px;
+}
+h2{
+  font:700 30px/1.2 var(--serif);
+  color:var(--navy);
+  margin:0 0 18px;
+  letter-spacing:-.005em;
+}
+h3{
+  font:600 21px/1.3 var(--serif);
+  color:var(--ink);
+  margin:28px 0 12px;
+}
+h4{
+  font:700 14px/1.3 var(--sans);
+  color:var(--navy);
+  margin:18px 0 8px;
+  letter-spacing:.01em;
+}
+p{margin:0 0 16px}
+strong{font-weight:700; color:var(--navy)}
+a{color:var(--navy); text-decoration:underline; text-decoration-color:rgba(11,46,90,0.3); text-underline-offset:3px}
+em{color:var(--dim2)}
+
+ul, ol{margin:14px 0 18px; padding-left:24px}
+li{margin:8px 0; padding-left:4px}
+ul li::marker{color:var(--gold); content:"\25A0  "}
+ol li::marker{color:var(--gold); font-weight:700}
+ul.plain li::marker{content:""}
+
+hr{border:none; border-top:1px solid var(--border); margin:32px 0}
+
+/* TL;DR box */
+.tldr{
+  background:var(--paper);
+  border:3px solid #000;
+  border-left-width:8px;
+  padding:24px 28px;
+  margin:24px 0;
+}
+.tldr .label{
+  font:700 11px/1 var(--sans);
+  color:var(--navy);
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  margin:0 0 14px;
+}
+.tldr ul{margin:0; padding:0; list-style:none}
+.tldr ul li{
+  padding:12px 0;
+  border-bottom:1px solid var(--border-lt);
+  font:400 16px/1.55 var(--serif);
+  color:var(--ink);
+}
+.tldr ul li:last-child{border-bottom:none; padding-bottom:0}
+.tldr ul li:first-child{padding-top:0}
+.tldr ul li strong{color:var(--navy)}
+
+/* Anchor box */
+.anchor{
+  background:var(--gold-bg);
+  border:3px solid var(--gold);
+  padding:22px 28px;
+  margin:24px 0;
+}
+.anchor .label{
+  font:700 11px/1 var(--sans);
+  color:var(--gold-deep);
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  margin:0 0 12px;
+}
+.anchor p{
+  font:400 16px/1.55 var(--serif);
+  color:var(--text2);
+  margin:0;
+}
+.anchor p strong{color:var(--navy)}
+
+/* Tables */
+table{
+  width:100%;
+  border-collapse:collapse;
+  border:3px solid #000;
+  background:#FFF;
+  margin:20px 0;
+  font:400 15px/1.5 var(--serif);
+}
+thead th{
+  background:var(--navy);
+  color:#fff;
+  padding:18px 24px;
+  font:700 11px/1.2 var(--sans);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  border-bottom:3px solid #000;
+  text-align:left;
+  vertical-align:top;
+}
+tbody td{
+  padding:14px 24px;
+  border-bottom:1px solid var(--border-lt);
+  vertical-align:top;
+}
+tbody tr:last-child td{border-bottom:none}
+tbody td.job{font:600 15px/1.4 var(--serif); color:var(--navy); width:22%}
+tbody td.before{color:var(--dim); width:39%}
+tbody td.after{color:var(--ink); width:39%}
+
+/* Pull quote */
+.pullquote{
+  font:italic 18px/1.5 var(--serif);
+  color:var(--text2);
+  border-left:4px solid var(--gold);
+  padding:6px 0 6px 20px;
+  margin:24px 0;
+}
+
+/* 3-col archetype grid (the one place we break single-column) */
+.archetypes{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:18px;
+  margin:24px 0;
+}
+.archetype{
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-top:3px solid var(--navy);
+  padding:18px 20px;
+}
+.archetype:nth-child(2){border-top-color:var(--gold)}
+.archetype:nth-child(3){border-top-color:#000}
+.archetype h4{margin:0 0 6px; color:var(--navy)}
+.archetype em{display:block; font-size:13px; margin-bottom:10px; color:var(--dim)}
+.archetype ul{margin:0; padding-left:18px}
+.archetype ul li{font-size:14px; margin:6px 0; line-height:1.45}
+
+/* SVG wraps */
+.svgwrap{
+  background:var(--paper);
+  border:1px solid var(--border);
+  padding:18px;
+  margin:24px 0;
+}
+
+/* Kbd / inline code */
+.kbd{
+  font:500 13px/1 "SF Mono", ui-monospace, monospace;
+  background:#EFEBDC;
+  border:1px solid var(--border);
+  padding:2px 6px;
+  border-radius:3px;
+  color:var(--navy);
+}
+
+/* Appendix */
+.appendix{
+  background:var(--bg);
+  border-top:3px solid var(--navy);
+  padding:56px 0 72px;
+  margin-top:24px;
+}
+.appendix h2{margin-bottom:8px}
+.appendix .lede{
+  font:400 17px/1.55 var(--serif);
+  color:var(--dim2);
+  margin-bottom:24px;
+}
+.appx-group{
+  padding:14px 0;
+  border-bottom:1px solid var(--border-lt);
+}
+.appx-group h4{
+  font:700 12px/1 var(--sans);
+  color:var(--gold);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  margin:0 0 8px;
+}
+.appx-group p{
+  font:400 14px/1.55 var(--serif);
+  color:var(--ink);
+  margin:0;
+}
+.appx-group code{
+  font:13px/1.4 "SF Mono", ui-monospace, monospace;
+  background:#EFEBDC;
+  padding:1px 5px;
+  border-radius:3px;
+  color:var(--navy);
+}
+
+/* Footer doc bar */
+.docbar.bottom{margin-top:0}
+
+/* Responsive */
+@media (max-width:640px){
+  .docbar{padding:10px 20px; font-size:10px}
+  .wrap{padding:0 20px}
+  h1.cover-h1{font-size:36px}
+  .cover-sub{font-size:18px}
+  h2{font-size:24px}
+  h3{font-size:18px}
+  body{font-size:16px}
+  .archetypes{grid-template-columns:1fr}
+  thead th, tbody td{padding:12px 14px}
+  tbody td.job{width:auto}
+  .tldr, .anchor{padding:18px 20px}
+}
+</style>
+</head>
+<body>
+
+<div class="docbar">
+  <span class="left">Proposal &middot; Confidential</span>
+  <span class="right">AI Creative Production OS</span>
+</div>
+
+<main class="wrap">
+
+  <!-- COVER -->
+  <header class="cover">
+    <div class="meta-line">
+      Prepared for <span class="dot">&bull;</span> [Client Name]
+      <span class="dot">&bull;</span> Prepared by [Firm Name]
+      <span class="dot">&bull;</span> [Date]
+    </div>
+    <h1 class="cover-h1">AI Creative Production OS</h1>
+    <p class="cover-sub">A full-stack typed creative platform for modern marketing organizations &mdash; across paid, organic, email, sales enablement, and outreach. One brief, every channel, one audit chain, one feedback loop.</p>
+    <p class="byline">This proposal lays out a six-module operating system that takes a marketing team from ad-hoc creative chaos to a measurable, defensible, self-improving production pipeline. It is built for broad-market B2B and DTC leadership &mdash; the data-center operator, the pet-food DTC, the category-defining SaaS &mdash; running on the same spine, configured per brand.</p>
+  </header>
+
+  <!-- §01 -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 01 &middot; Context</div>
+    <h2>The state of creative ops today</h2>
+    <p>Every marketing organization has bought into AI. Almost none has restructured how creative actually flows through the building. The result is an industry full of <strong>AI-shaped tools sitting on top of pre-AI processes</strong> &mdash; faster generation, same operational chaos.</p>
+
+    <h3>Three failure modes, observed everywhere</h3>
+
+    <h4>Brief chaos</h4>
+    <p>Requests scatter across Slack threads, email forwards, ticket fields, and one-off PDFs. Briefs get rewritten three times before production begins. There is no single source of truth &mdash; only five lossy copies of one.</p>
+
+    <h4>Multi-tool sprawl</h4>
+    <p>Copy lives in one tool, design in another, video in a third, publishing in a fourth, approvals in a fifth. Each surface has its own login, its own taxonomy, its own definition of "the brand." Continuity is held together by Slack threads and tribal memory.</p>
+
+    <h4>Measurement disconnect</h4>
+    <p>Performance dashboards live a universe away from the artifacts that produced them. Nobody can answer <em>why this ad worked</em> &mdash; only that it did. Every new campaign starts from priors built on memory and folklore.</p>
+
+    <div class="pullquote">The result: AI-shaped tools without an AI-shaped operating system.</div>
+
+    <h3>What changes when creative ops becomes a system</h3>
+    <p>Five jobs every marketing team already does &mdash; re-shaped from ad-hoc into systemic.</p>
+
+    <table>
+      <thead><tr><th>Job</th><th>Today (ad-hoc)</th><th>With the OS (systemic)</th></tr></thead>
+      <tbody>
+        <tr><td class="job">Intake</td><td class="before">Ten request channels, three formats, no required fields.</td><td class="after">One typed brief schema. Required fields enforced at submission.</td></tr>
+        <tr><td class="job">Brief</td><td class="before">Rewritten by whichever PM picks it up. Voice drifts each time.</td><td class="after">Auto-derived from intake. Voice pack attached at compile time.</td></tr>
+        <tr><td class="job">Produce</td><td class="before">Different tool per channel. Hand-offs lose context.</td><td class="after">One brief drives eight channels. Lineage attached to every output.</td></tr>
+        <tr><td class="job">QA</td><td class="before">Reviewer reads every comma. Voice judgment is folkloric.</td><td class="after">Eval rubric scored automatically. Reviewers handle escalations only.</td></tr>
+        <tr><td class="job">Measure</td><td class="before">Pulled monthly by an analyst. Disconnected from creative.</td><td class="after">Predicted vs realized scored per artifact. Calibration report shapes the next brief.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="tldr">
+      <div class="label">Before / After &mdash; in one line each</div>
+      <ul>
+        <li><strong>Intake</strong> goes from ten channels to one typed schema.</li>
+        <li><strong>Briefs</strong> stop being rewritten; they are derived and voice-bound.</li>
+        <li><strong>Production</strong> stops being per-tool; one brief fans out to eight channels.</li>
+        <li><strong>QA</strong> stops reading every comma; reviewers handle the 5&ndash;10% that escalates.</li>
+        <li><strong>Measurement</strong> stops being a fire drill; the system reports on itself.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- §02 -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 02 &middot; Positioning</div>
+    <h2>The AI Creative Production OS</h2>
+    <p>A typed creative operations platform that turns every brief into a measurable artifact and every channel &mdash; paid, organic, email, sales enablement, outreach &mdash; into a self-improving workflow. It is not a generation tool. It is the connective tissue underneath the tools you already use.</p>
+
+    <div class="anchor">
+      <div class="label">Positioning &middot; one-line claim</div>
+      <p>A typed creative operations platform that turns every brief into a <strong>measurable artifact</strong> and every channel into a <strong>self-improving workflow</strong>.</p>
+    </div>
+
+    <h3>Three load-bearing pillars</h3>
+
+    <h4>Typed artifact spine</h4>
+    <p>Five JSON Schemas connect every module. Briefs, voice packs, forecasts, runs, and performance carry the same shape end-to-end. Nothing is freeform. Everything is replayable.</p>
+
+    <h4>Production breadth</h4>
+    <p>One brief fans out into static ads, social posts, blog drafts, email journeys, sales-enablement cards, and outreach drafts &mdash; under one voice pack and one audit chain.</p>
+
+    <h4>Closed-loop measurement</h4>
+    <p>Realized performance becomes a typed artifact joined to the brief that produced it. Calibration reports surface what predicted matched and what missed &mdash; the Creative Manager reads them and updates the next brief. Strategy stays human; the audit and the math stay systemic.</p>
+
+    <h3>Architecture in one diagram</h3>
+    <p>A horizontal flow of typed stages. Every box emits a typed JSON artifact. Every arrow is a JSON Schema. Modules are independently replaceable.</p>
+
+    <div class="svgwrap">
+      <svg viewBox="0 0 1080 320" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#0B2E5A"/>
+          </marker>
+          <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#B8A340"/>
+          </marker>
+        </defs>
+        <g>
+          <rect x="20" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+          <text x="70" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Intake</text>
+          <text x="70" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#6B6B6B" letter-spacing=".05em">request.v1</text>
+
+          <rect x="140" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+          <text x="190" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Brief</text>
+          <text x="190" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#6B6B6B">brief.v1</text>
+
+          <rect x="260" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+          <text x="310" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Voice</text>
+          <text x="310" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#6B6B6B">voice_pack.v1</text>
+
+          <rect x="380" y="80" width="200" height="96" rx="3" fill="#FFFCEF" stroke="#B8A340" stroke-width="1.6"/>
+          <text x="480" y="108" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0B2E5A">Produce</text>
+          <text x="480" y="126" text-anchor="middle" font-family="Inter" font-size="10" fill="#8A6F1A">8 channels</text>
+          <text x="480" y="146" text-anchor="middle" font-family="Source Serif Pro" font-size="11" font-style="italic" fill="#4A4A4A">paid &middot; social &middot; blog &middot; email</text>
+          <text x="480" y="160" text-anchor="middle" font-family="Source Serif Pro" font-size="11" font-style="italic" fill="#4A4A4A">cards &middot; outreach &middot; replies</text>
+
+          <rect x="600" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+          <text x="650" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Review</text>
+          <text x="650" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#6B6B6B">decision.v1</text>
+
+          <rect x="720" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+          <text x="770" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Publish</text>
+          <text x="770" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#6B6B6B">run_result.v1</text>
+
+          <rect x="840" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+          <text x="890" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Measure</text>
+          <text x="890" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#6B6B6B">performance.v1</text>
+
+          <rect x="960" y="100" width="100" height="56" rx="3" fill="#FFFFFF" stroke="#B8A340" stroke-width="1.6"/>
+          <text x="1010" y="125" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#1A1A1A">Calibrate</text>
+          <text x="1010" y="142" text-anchor="middle" font-family="Inter" font-size="10" fill="#8A6F1A">report</text>
+        </g>
+
+        <line x1="120" y1="128" x2="140" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+        <line x1="240" y1="128" x2="260" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+        <line x1="360" y1="128" x2="380" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+        <line x1="580" y1="128" x2="600" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+        <line x1="700" y1="128" x2="720" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+        <line x1="820" y1="128" x2="840" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+        <line x1="940" y1="128" x2="960" y2="128" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr)"/>
+
+        <path d="M 1010 156 Q 1010 250 540 250 Q 190 250 190 156" stroke="#B8A340" stroke-width="1.6" stroke-dasharray="5 4" fill="none" marker-end="url(#arrg)"/>
+        <text x="540" y="244" text-anchor="middle" font-family="Source Serif Pro" font-size="11" font-style="italic" fill="#8A6F1A">calibration report &rarr; read by Creative Manager &rarr; next brief</text>
+
+        <text x="540" y="295" text-anchor="middle" font-family="Source Serif Pro" font-size="11" font-style="italic" fill="#6B6B6B">Every box emits a typed JSON artifact. Every arrow is a JSON Schema. Modules are independently replaceable.</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- §03 · MODULES -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 03 &middot; The six modules</div>
+    <h2>The six modules</h2>
+    <p>Each module owns one job, emits one typed artifact, and plugs into the spine. They can be deployed independently or together &mdash; but the leverage compounds when they run as a system.</p>
+
+    <!-- 3.1 -->
+    <div class="eyebrow-sub">Module 3.1</div>
+    <h3>Intake &amp; briefing</h3>
+    <p>A single typed brief that every downstream channel reads &mdash; no rewrites, no lost context, no folkloric "ask Sarah" institutional knowledge.</p>
+    <ul>
+      <li><strong>Typed brief schema.</strong> Eleven required fields covering audience, objective, channel, constraints, success criteria. Enforced at submission. Validates to <span class="kbd">brief.v1</span>.</li>
+      <li><strong>Auto-derivation.</strong> From a one-line ask, the system drafts a complete brief &mdash; pulling from the brand pack and any calibration findings the Creative Manager has flagged from prior campaigns. Editors review instead of write.</li>
+      <li><strong>Single source of truth.</strong> The same brief object compiles into paid creative, social copy, email, sales enablement, outreach &mdash; without rewriting. Lineage carries through every downstream artifact.</li>
+    </ul>
+    <div class="anchor">
+      <div class="label">Outcome</div>
+      <p><strong>One brief drives every channel.</strong> No rewrites, no drift, no "which version is the real one."</p>
+    </div>
+
+    <hr>
+
+    <!-- 3.2 -->
+    <div class="eyebrow-sub">Module 3.2</div>
+    <h3>Voice governance &amp; copy QA</h3>
+    <p>Brand voice stops being a folk tradition. It becomes a typed artifact with a rubric and an enforcement engine.</p>
+    <ul>
+      <li><strong>Typed voice pack.</strong> Tone vectors, style rules, lexicon, do/don't examples with rationale, claim guardrails and regulated language &mdash; versioned per brand, attached to every brief.</li>
+      <li><strong>Copy on rails.</strong> Self-serve generation under voice constraints, scored against an eval rubric (voice fidelity, on-brand, claim safety, hook strength), with drift detection and a single auto-heal attempt before escalation.</li>
+    </ul>
+    <div class="anchor">
+      <div class="label">Outcome</div>
+      <p>Your voice is <strong>enforceable.</strong> Your team self-serves copy responsibly. Your reviewers handle escalations, not every comma.</p>
+    </div>
+
+    <hr>
+
+    <!-- 3.3 -->
+    <div class="eyebrow-sub">Module 3.3</div>
+    <h3>Production across channels</h3>
+    <p>Eight production surfaces. One brief object. One voice pack. One audit chain. This is where the leverage shows up &mdash; the same intake fans out into every artifact a modern marketing team ships.</p>
+
+    <table>
+      <thead><tr><th>Channel</th><th>Workflow</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Paid static ads</strong></td><td>Concept &middot; Replicate &middot; Template &middot; Campaign pipelines</td><td>Image creatives at platform specs (Meta, LinkedIn, Display)</td></tr>
+        <tr><td><strong>Organic social</strong></td><td>5-platform render workflow</td><td>Twitter, LinkedIn, Facebook, Instagram, Threads PNGs</td></tr>
+        <tr><td><strong>Long-form blog</strong></td><td>Outline + draft pipeline</td><td>Article markdown with structure, headings, CTA</td></tr>
+        <tr><td><strong>Email journeys</strong></td><td>Strategist + designer + copywriter + assembler subagents</td><td>Full sequence with HTML and copy, journey-ready</td></tr>
+        <tr><td><strong>Sales enablement</strong></td><td>144-variant typographic card lab</td><td>Branded one-pagers, stat cards, quote cards</td></tr>
+        <tr><td><strong>Outreach &amp; replies</strong></td><td>Plain-text drafts in voice</td><td>Email / DM / reply drafts ready for human send</td></tr>
+      </tbody>
+    </table>
+
+    <div class="anchor">
+      <div class="label">Outcome</div>
+      <p>Every channel reads the <strong>same brief</strong>. Every output carries the <strong>same lineage</strong>. Coverage stops being a function of which channel the PM happens to staff.</p>
+    </div>
+
+    <hr>
+
+    <!-- 3.4 -->
+    <div class="eyebrow-sub">Module 3.4</div>
+    <h3>Review gates &amp; policy</h3>
+    <p>Every output &mdash; copy, image, video, email &mdash; passes through a policy engine before it can ship. Three lanes, one decision schema.</p>
+    <ul>
+      <li><strong>Allow.</strong> Passes rubric and policy. Ships. Lineage logged.</li>
+      <li><strong>Escalate.</strong> Fails one or more rubric checks. One auto-heal attempt; if still failing, routed to a human reviewer with rationale attached.</li>
+      <li><strong>Deny.</strong> Hard policy violation (claim, regulated term, brand red-line). Blocked. Rationale logged.</li>
+    </ul>
+    <p>The rubric is explicit: voice fidelity, on-brand score, claim safety, hook strength, regulated terms, channel fit. The decision is typed to <span class="kbd">decision.v1</span> so every approval and every rejection is replayable and auditable.</p>
+    <div class="anchor">
+      <div class="label">Outcome</div>
+      <p>Reviewers stop being copy editors. They become <strong>judges of taste on the 7%</strong> that actually needs them.</p>
+    </div>
+
+    <hr>
+
+    <!-- 3.5 -->
+    <div class="eyebrow-sub">Module 3.5</div>
+    <h3>Audit &amp; lineage</h3>
+    <p>Five typed JSON Schemas form the spine. Every artifact links upstream and downstream. Nothing is orphaned.</p>
+
+    <div class="svgwrap">
+      <svg viewBox="0 0 1080 140" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#0B2E5A"/>
+          </marker>
+        </defs>
+        <rect x="20" y="40" width="180" height="60" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+        <text x="110" y="68" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0B2E5A">voice_pack.v1</text>
+        <text x="110" y="86" text-anchor="middle" font-family="Source Serif Pro" font-size="11" fill="#6B6B6B">brand voice typed</text>
+        <line x1="200" y1="70" x2="240" y2="70" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr3)"/>
+
+        <rect x="240" y="40" width="160" height="60" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+        <text x="320" y="68" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0B2E5A">brief.v1</text>
+        <text x="320" y="86" text-anchor="middle" font-family="Source Serif Pro" font-size="11" fill="#6B6B6B">campaign request</text>
+        <line x1="400" y1="70" x2="440" y2="70" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr3)"/>
+
+        <rect x="440" y="40" width="180" height="60" rx="3" fill="#FFFCEF" stroke="#B8A340" stroke-width="1.6"/>
+        <text x="530" y="68" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0B2E5A">forecast.v1</text>
+        <text x="530" y="86" text-anchor="middle" font-family="Source Serif Pro" font-size="11" fill="#8A6F1A">audience prediction</text>
+        <line x1="620" y1="70" x2="660" y2="70" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr3)"/>
+
+        <rect x="660" y="40" width="180" height="60" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+        <text x="750" y="68" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0B2E5A">run_result.v1</text>
+        <text x="750" y="86" text-anchor="middle" font-family="Source Serif Pro" font-size="11" fill="#6B6B6B">produced artifact</text>
+        <line x1="840" y1="70" x2="880" y2="70" stroke="#0B2E5A" stroke-width="1.6" marker-end="url(#arr3)"/>
+
+        <rect x="880" y="40" width="180" height="60" rx="3" fill="#FFFFFF" stroke="#0B2E5A" stroke-width="1.6"/>
+        <text x="970" y="68" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0B2E5A">performance.v1</text>
+        <text x="970" y="86" text-anchor="middle" font-family="Source Serif Pro" font-size="11" fill="#6B6B6B">realized outcome</text>
+      </svg>
+    </div>
+
+    <div class="anchor">
+      <div class="label">Outcome</div>
+      <p>Answer <strong>"who made this, why, what happened"</strong> for any creative ever produced. Defensible, replayable, learnable.</p>
+    </div>
+
+    <hr>
+
+    <!-- 3.6 -->
+    <div class="eyebrow-sub">Module 3.6</div>
+    <h3>Measurement loop</h3>
+    <p>Three commands close the loop from realized performance back to the next brief &mdash; with a human reading the calibration, not an autoupdate.</p>
+    <ul>
+      <li><strong>metrics adapt.</strong> Takes a run_result plus a sidecar of realized engagement numbers (from whatever analytics surface your team already uses) and emits typed <span class="kbd">performance.v1</span> bound to the originating artifact.</li>
+      <li><strong>metrics calibrate.</strong> Reads predicted forecast against realized performance and produces an alignment report: which predicted outcomes matched, which missed, and on which platforms.</li>
+      <li><strong>metrics study.</strong> Pipeline retrospective: forecast accuracy + voice consistency + creative effectiveness, joined on the artifact spine. One report explains an entire campaign.</li>
+    </ul>
+    <div class="anchor">
+      <div class="label">Outcome</div>
+      <p>Reports stop being fire drills. The system produces the audit trail. The <strong>Creative Manager reads the calibration</strong> and shapes the next brief &mdash; strategy stays human, mechanics stay systemic.</p>
+    </div>
+  </section>
+
+  <!-- §04 -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 04 &middot; The differentiator</div>
+    <h2>The audience prediction layer</h2>
+    <p>Most "AI creative" tools generate and ship. This one <strong>predicts how the audience will react first</strong> &mdash; using a multi-agent simulation of the target audience before a single dollar of media is spent.</p>
+
+    <h3>How it works</h3>
+    <ul>
+      <li>Graph + ontology of the target audience &mdash; demographic, behavioral, channel-affinity.</li>
+      <li>Swarm of synthetic audience agents &mdash; distinct personas, beliefs, channels.</li>
+      <li>The brief + creative is exposed to the swarm.</li>
+      <li>Each agent reacts: attention, sentiment, intent, share probability.</li>
+    </ul>
+
+    <h3>What it returns</h3>
+    <ul>
+      <li>Scenarios with probabilities &mdash; best / median / tail-risk.</li>
+      <li>Recommended adjustments per scenario.</li>
+      <li>Sensitivity analysis &mdash; which lever moves which metric.</li>
+      <li>Typed <span class="kbd">forecast.v1</span> ready for calibration scoring post-launch.</li>
+    </ul>
+
+    <div class="anchor">
+      <div class="label">The headline claim</div>
+      <p><strong>Predict first, ship second, calibrate third.</strong> The flywheel turns on simulation, not hope. Forecasts get scored against reality &mdash; every campaign makes the next one sharper.</p>
+    </div>
+  </section>
+
+  <!-- §05 -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 05 &middot; Day-in-life</div>
+    <h2>Day-in-life &middot; the Creative Manager</h2>
+    <p>The role doesn't shrink. The job changes shape &mdash; from chasing artifacts to directing the system that produces them.</p>
+
+    <table>
+      <thead><tr><th>Dimension</th><th>Today</th><th>With the OS</th></tr></thead>
+      <tbody>
+        <tr><td class="job">Brief turnaround</td><td class="before">3&ndash;5 days from request to "starting work"</td><td class="after">Same-day typed brief, voice-bound, channel-ready</td></tr>
+        <tr><td class="job">Capacity visibility</td><td class="before">Spreadsheet maintained by a PM, stale by Wednesday</td><td class="after">Live pipeline view, every artifact in every state</td></tr>
+        <tr><td class="job">Channel coverage</td><td class="before">Top 2 channels well, others starved</td><td class="after">Eight channels in parallel from one brief</td></tr>
+        <tr><td class="job">QA cycle time</td><td class="before">Reviewer reads everything end to end</td><td class="after">Eval rubric scores first; reviewer handles 5&ndash;10% escalations</td></tr>
+        <tr><td class="job">Reporting</td><td class="before">Monthly fire drill &mdash; pulled by analyst, ad-hoc deck</td><td class="after">Calibrated study generated per campaign, on demand</td></tr>
+        <tr><td class="job">Optimization</td><td class="before">Memory-based &mdash; "I think the green one worked"</td><td class="after">Forecast-vs-realized calibration on every campaign &mdash; read by the Creative Manager, applied to the next brief</td></tr>
+      </tbody>
+    </table>
+
+    <div class="pullquote">The Creative Manager stops being the bottleneck. They become the conductor.</div>
+  </section>
+
+  <!-- §06 -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 06 &middot; Brand-agnostic by design</div>
+    <h2>One OS, three brand archetypes</h2>
+    <p>The platform is brand-agnostic. Voice packs and brief shapes flex per ICP &mdash; the spine doesn't. Three archetypes the OS already maps cleanly to:</p>
+
+    <div class="archetypes">
+      <div class="archetype">
+        <h4>Data center / cloud B2B</h4>
+        <em>e.g. TierPoint-style enterprise infra</em>
+        <ul>
+          <li><strong>Voice:</strong> credible, technical, restrained</li>
+          <li><strong>Channels:</strong> LinkedIn paid &middot; email nurture &middot; sales enablement</li>
+          <li><strong>KPI:</strong> MQL pipeline + SQL conversion</li>
+        </ul>
+      </div>
+      <div class="archetype">
+        <h4>DTC pet food</h4>
+        <em>e.g. Shepherd Boy Farms-style</em>
+        <ul>
+          <li><strong>Voice:</strong> warm, plainspoken, owner-to-owner</li>
+          <li><strong>Channels:</strong> Instagram &middot; TikTok &middot; retargeting &middot; email</li>
+          <li><strong>KPI:</strong> first-order subscription rate</li>
+        </ul>
+      </div>
+      <div class="archetype">
+        <h4>Enterprise SaaS</h4>
+        <em>category-defining horizontal SaaS</em>
+        <ul>
+          <li><strong>Voice:</strong> analytical, opinionated, category-defining</li>
+          <li><strong>Channels:</strong> LinkedIn &middot; paid &middot; thought-leadership blog</li>
+          <li><strong>KPI:</strong> demo requests + brand lift</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="anchor">
+      <div class="label">The portability claim</div>
+      <p><strong>Same OS. Three voice packs. Three brief shapes. One platform.</strong> The spine is constant; the configuration is per-brand.</p>
+    </div>
+  </section>
+
+  <!-- §07 -->
+  <section class="body-section">
+    <div class="eyebrow-top">&sect; 07 &middot; Stack, timeline, engagement</div>
+    <h2>Integrates, deploys, partners</h2>
+
+    <h3>Built to live alongside your stack</h3>
+    <p>What ships native vs. what's scoped during configuration &mdash; stated plainly. The platform doesn't replace your stack; it makes the artifacts flowing through it auditable.</p>
+
+    <table>
+      <thead><tr><th style="width:24%">Layer</th><th>What's in scope</th></tr></thead>
+      <tbody>
+        <tr><td class="job"><strong>Published natively</strong></td><td>Twitter &middot; LinkedIn &middot; Meta &middot; Facebook &middot; Threads &mdash; direct API adapters. Posts ship with full lineage, no aggregator middleware.</td></tr>
+        <tr><td class="job">DAM push</td><td>Frame.io &middot; Brandfolder &middot; Box &middot; Bynder &mdash; rendered deliverables push to your DAM via REST. Scoped during onboarding; typical 1&ndash;2 weeks per DAM.</td></tr>
+        <tr><td class="job">Other tools</td><td>Figma &middot; Adobe Creative Cloud &middot; Slack &middot; Teams &middot; Monday &middot; Asana &middot; Jira &mdash; custom integrations scoped during the 4&ndash;6 week configuration phase based on what your team runs.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="pullquote">Native publishing. Honest scoping for everything else.</div>
+
+    <h3>Deployment &amp; engagement model</h3>
+    <p>The platform is deployed and operated by us. Your team interacts through the tools they already use &mdash; not a terminal. This is software-defined creative ops, sold as a service.</p>
+
+    <table>
+      <thead><tr><th style="width:24%">Layer</th><th>How it works</th></tr></thead>
+      <tbody>
+        <tr><td class="job"><strong>Platform</strong></td><td>Deployed in your cloud or ours. SQLite-backed run engine, typed artifacts, policy gates &mdash; all server-side. No installation on your team's machines.</td></tr>
+        <tr><td class="job"><strong>Operator</strong></td><td>A creative operations engineer on our team runs the platform on your behalf. They join your stand-ups, take requests in Slack, and own the day-to-day mechanics. Embedded specialist, not vendor on retainer.</td></tr>
+        <tr><td class="job"><strong>Your Creative Manager</strong></td><td>Sends briefs in Slack or shared docs. Reviews drafts in Google Docs or Notion. Approves rendered creative in the channels they already use. Owns strategy and judgment.</td></tr>
+        <tr><td class="job"><strong>Leadership</strong></td><td>Reviews escalations and calibration reports the platform produces. Sets the policy boundaries the system operates inside.</td></tr>
+        <tr><td class="job">Self-serve surfaces</td><td>Custom UI surfaces (intake form, asset gallery, approval queue) are scoped during the engagement based on what your team actually wants to operate hands-on.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="anchor">
+      <div class="label">What this means in plain terms</div>
+      <p>You're not buying a tool your team has to learn. You're <strong>hiring a service backed by a platform</strong>. The CLI stays on our side. Your Creative Manager keeps the job description, with more capacity and better instruments.</p>
+    </div>
+
+    <h3>30 / 60 / 90 deployment</h3>
+    <p>A phased rollout. Each phase ships a usable system &mdash; not a slide.</p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Milestones</th><th>What ships</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="job">Day 30 &middot; foundation</td>
+          <td class="before">Brand kit and voice pack signed off. Briefing standardized on one schema.</td>
+          <td class="after">First 3 briefs flowing through the pipeline end-to-end.</td>
+        </tr>
+        <tr>
+          <td class="job">Day 60 &middot; production</td>
+          <td class="before">Workflows live for top 3 channels. Policy engine + eval rubric in production. Measurement sidecar workflow operational against your existing analytics output.</td>
+          <td class="after">First calibration report shipped.</td>
+        </tr>
+        <tr>
+          <td class="job">Day 90 &middot; loop running</td>
+          <td class="before">Audit lineage end-to-end across all channels. Calibration cycle running &mdash; forecast vs realized scored on every campaign.</td>
+          <td class="after">Second campaign cycle informed by the first. Quarterly review cadence established with the Creative Manager owning the read-out.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Engagement model</h3>
+    <p>Three components &mdash; license, configuration, partnership. Sized to your org, not a fixed SKU.</p>
+    <ul>
+      <li><strong>Platform license.</strong> The OS deployed in your cloud or ours. Annual subscription, scaled by brand count and active workflows. Includes runtime, schemas, modules, and ongoing platform updates.</li>
+      <li><strong>Configuration &amp; integration.</strong> Brand kit build-out, voice pack authoring, intake-path design, and team training. Typical onboarding window: 4&ndash;6 weeks.</li>
+      <li><strong>Ongoing partnership.</strong> Quarterly calibration reviews, new channel additions, voice pack tuning, and capability expansion as your portfolio grows. Aligned to your campaign cadence, not ours.</li>
+    </ul>
+
+    <div class="anchor">
+      <div class="label">Engagement summary</div>
+      <p><strong>License + configuration + partnership.</strong> Deploy in your cloud or ours, onboard in 4&ndash;6 weeks, calibrate every quarter. Sized to your portfolio, not a fixed SKU.</p>
+    </div>
+
+    <h3>Next steps</h3>
+    <p>Three ways to move forward, in order of commitment:</p>
+    <ol>
+      <li><strong>Book a discovery call.</strong> 45 minutes. We map your current intake-to-publish flow against the OS and identify the single highest-leverage module to deploy first.</li>
+      <li><strong>Scope a pilot.</strong> One brand, two channels, 30 days. Fixed-fee. Concrete artifacts, calibrated reporting, and a go/no-go decision at the end.</li>
+      <li><strong>Architecture deep-dive.</strong> Half-day session with your platform, security, and creative leads. We walk the typed spine, the integration surface, and the deployment topology in detail.</li>
+    </ol>
+  </section>
+
+</main>
+
+
+<div class="docbar bottom">
+  <span class="left">End &middot; AI Creative Production OS</span>
+  <span class="right">Confidential</span>
+</div>
+
+</body>
+</html>
