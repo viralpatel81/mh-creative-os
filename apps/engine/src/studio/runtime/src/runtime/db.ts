@@ -26,13 +26,18 @@ export function openRuntimeDb(root?: string): DatabaseSync {
       id TEXT PRIMARY KEY,
       workflow TEXT NOT NULL,
       brand TEXT NOT NULL,
-      status TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN (
+        'queued','running','in_review','approved','rejected','failed','published','cancelled'
+      )),
       input_json TEXT NOT NULL,
       current_step TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
+      started_at TEXT,
+      finished_at TEXT,
       parent_run_id TEXT,
-      error_message TEXT
+      error_message TEXT,
+      attempts INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS artifacts (
@@ -46,7 +51,11 @@ export function openRuntimeDb(root?: string): DatabaseSync {
     );
   `)
 
+  // Forward-compatible ALTER for DBs created before these columns existed.
   ensureColumn(db, 'runs', 'error_message', 'TEXT')
+  ensureColumn(db, 'runs', 'started_at', 'TEXT')
+  ensureColumn(db, 'runs', 'finished_at', 'TEXT')
+  ensureColumn(db, 'runs', 'attempts', 'INTEGER NOT NULL DEFAULT 0')
 
   return db
 }

@@ -35,4 +35,36 @@ describe('openRuntimeDb', () => {
       rmSync(root, { recursive: true, force: true })
     }
   })
+
+  it('rejects inserting a run row with an unknown status (CHECK constraint)', () => {
+    const root = mkdtempSync(join(tmpdir(), 'mh-runtime-check-'))
+    try {
+      const db = openRuntimeDb(root)
+      expect(() =>
+        db.prepare(`
+          INSERT INTO runs (id, workflow, brand, status, input_json, current_step, created_at, updated_at, attempts)
+          VALUES ('r1', 'social.post', 'b1', 'BOGUS', '{}', 'signal', 'now', 'now', 0)
+        `).run(),
+      ).toThrow(/CHECK constraint/i)
+      db.close()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('has started_at, finished_at, attempts columns on runs', () => {
+    const root = mkdtempSync(join(tmpdir(), 'mh-runtime-cols-'))
+    try {
+      const db = openRuntimeDb(root)
+      const cols = (db.prepare('PRAGMA table_info(runs)').all() as Array<{ name: string }>).map(
+        (c) => c.name,
+      )
+      expect(cols).toContain('started_at')
+      expect(cols).toContain('finished_at')
+      expect(cols).toContain('attempts')
+      db.close()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
 })
