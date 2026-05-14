@@ -69,7 +69,7 @@ async function startHarness(): Promise<Harness> {
     engine: {
       engineRoot,
       artifactsDir: join(engineRoot, 'state', 'artifacts'),
-      cliCommand: '/bin/false',
+      cliCommand: '/usr/bin/false',
       cliBaseArgs: [],
     },
   })
@@ -118,7 +118,7 @@ describe('GET /api/agentcy/brands', () => {
         engine: {
           engineRoot,
           artifactsDir: join(engineRoot, 'state', 'artifacts'),
-          cliCommand: '/bin/false',
+          cliCommand: '/usr/bin/false',
           cliBaseArgs: [],
         },
       })

@@ -9,7 +9,11 @@
 
 import { useEffect, useState } from 'react';
 
-import { navigate, type WorkflowName } from '../router';
+import { navigate, NATIVE_WORKFLOWS, type WorkflowName } from '../router';
+
+function isNative(workflow: WorkflowName): boolean {
+  return (NATIVE_WORKFLOWS as readonly string[]).includes(workflow);
+}
 
 const AD_ASPECTS = ['1:1', '3:4', '9:16'] as const;
 const EMAIL_ASPECTS = ['2:3', '3:4', '9:16'] as const;
@@ -54,6 +58,13 @@ interface FormState {
   layoutMode: 'strategy' | 'template';
   aspects: string[];
   quantity: number;
+  // Native-agentcy fields (social.post / blog.post / outreach.touch
+  // / respond.reply). The engine CLI is permissive about which params
+  // each workflow uses, so we always send all three and let the
+  // pipeline pick what it needs.
+  topic: string;
+  pillar: string;
+  format: string;
 }
 
 function initialState(workflow: WorkflowName, prefilledBrand: string | null): FormState {
@@ -74,8 +85,13 @@ function initialState(workflow: WorkflowName, prefilledBrand: string | null): Fo
         ? ['1:1']
         : workflow === 'email.design'
           ? ['3:4']
-          : ['1:1'],
+          : workflow === 'popup.design'
+            ? ['1:1']
+            : [], // native workflows don't use aspects
     quantity: 1,
+    topic: '',
+    pillar: '',
+    format: '',
   };
 }
 
@@ -148,24 +164,34 @@ export function RequestForm({
       setError('Pick a brand');
       return;
     }
-    if (form.aspects.length === 0) {
+    const native = isNative(workflow);
+    if (!native && form.aspects.length === 0) {
       setError('Pick at least one aspect');
       return;
     }
     setSubmitting(true);
     setError(null);
-    const params: Record<string, unknown> = {
-      aspects: form.aspects,
-      engine: form.engine,
-      quantity: form.quantity,
-    };
-    if (form.brief) params.brief_text = form.brief;
-    if (form.customDescription) params.custom_description = form.customDescription;
-    if (workflow === 'ad.post') {
-      params.layout_mode = form.layoutMode;
-    }
-    if (workflow !== 'ad.post') {
-      params.purpose = form.purpose;
+    let params: Record<string, unknown>;
+    if (native) {
+      params = {};
+      if (form.topic) params.topic = form.topic;
+      if (form.pillar) params.pillar = form.pillar;
+      if (form.format) params.format = form.format;
+      if (form.brief) params.brief_text = form.brief;
+    } else {
+      params = {
+        aspects: form.aspects,
+        engine: form.engine,
+        quantity: form.quantity,
+      };
+      if (form.brief) params.brief_text = form.brief;
+      if (form.customDescription) params.custom_description = form.customDescription;
+      if (workflow === 'ad.post') {
+        params.layout_mode = form.layoutMode;
+      }
+      if (workflow !== 'ad.post') {
+        params.purpose = form.purpose;
+      }
     }
     try {
       const res = await fx('/api/agentcy/runs/workflow', {
@@ -247,7 +273,45 @@ export function RequestForm({
           />
         </div>
 
-        {purposeOptions ? (
+        {isNative(workflow) ? (
+          <>
+            <div className="request-form__row">
+              <label htmlFor="rf-topic">Topic</label>
+              <input
+                id="rf-topic"
+                data-testid="rf-topic"
+                type="text"
+                value={form.topic}
+                placeholder="What's this about?"
+                onChange={(e) => setForm((p) => ({ ...p, topic: e.target.value }))}
+              />
+            </div>
+            <div className="request-form__row">
+              <label htmlFor="rf-pillar">Pillar (optional)</label>
+              <input
+                id="rf-pillar"
+                data-testid="rf-pillar"
+                type="text"
+                value={form.pillar}
+                placeholder="e.g. care-economy"
+                onChange={(e) => setForm((p) => ({ ...p, pillar: e.target.value }))}
+              />
+            </div>
+            <div className="request-form__row">
+              <label htmlFor="rf-format">Format (optional)</label>
+              <input
+                id="rf-format"
+                data-testid="rf-format"
+                type="text"
+                value={form.format}
+                placeholder="e.g. infographic, statement, stat"
+                onChange={(e) => setForm((p) => ({ ...p, format: e.target.value }))}
+              />
+            </div>
+          </>
+        ) : null}
+
+        {!isNative(workflow) && purposeOptions ? (
           <div className="request-form__row">
             <label htmlFor="rf-purpose">Purpose</label>
             <select
@@ -288,59 +352,63 @@ export function RequestForm({
           </div>
         ) : null}
 
-        <div className="request-form__row">
-          <label>Aspects</label>
-          <div className="request-form__chips">
-            {aspectOptions.map((a) => (
-              <button
-                key={a}
-                type="button"
-                className={
-                  form.aspects.includes(a)
-                    ? 'request-form__chip request-form__chip--active'
-                    : 'request-form__chip'
-                }
-                data-testid={`rf-aspect-${a}`}
-                onClick={() => toggleAspect(a)}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
-        </div>
+        {!isNative(workflow) ? (
+          <>
+            <div className="request-form__row">
+              <label>Aspects</label>
+              <div className="request-form__chips">
+                {aspectOptions.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    className={
+                      form.aspects.includes(a)
+                        ? 'request-form__chip request-form__chip--active'
+                        : 'request-form__chip'
+                    }
+                    data-testid={`rf-aspect-${a}`}
+                    onClick={() => toggleAspect(a)}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="request-form__row">
-          <label>Engine</label>
-          <div className="request-form__chips">
-            {ENGINES.map((eng) => (
-              <button
-                key={eng}
-                type="button"
-                className={
-                  form.engine === eng
-                    ? 'request-form__chip request-form__chip--active'
-                    : 'request-form__chip'
-                }
-                data-testid={`rf-engine-${eng}`}
-                onClick={() => setForm((p) => ({ ...p, engine: eng }))}
-              >
-                {eng}
-              </button>
-            ))}
-          </div>
-        </div>
+            <div className="request-form__row">
+              <label>Engine</label>
+              <div className="request-form__chips">
+                {ENGINES.map((eng) => (
+                  <button
+                    key={eng}
+                    type="button"
+                    className={
+                      form.engine === eng
+                        ? 'request-form__chip request-form__chip--active'
+                        : 'request-form__chip'
+                    }
+                    data-testid={`rf-engine-${eng}`}
+                    onClick={() => setForm((p) => ({ ...p, engine: eng }))}
+                  >
+                    {eng}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="request-form__row">
-          <label htmlFor="rf-quantity">Quantity</label>
-          <input
-            id="rf-quantity"
-            data-testid="rf-quantity"
-            type="number"
-            min={1}
-            value={form.quantity}
-            onChange={(e) => setForm((p) => ({ ...p, quantity: Math.max(1, Number(e.target.value) || 1) }))}
-          />
-        </div>
+            <div className="request-form__row">
+              <label htmlFor="rf-quantity">Quantity</label>
+              <input
+                id="rf-quantity"
+                data-testid="rf-quantity"
+                type="number"
+                min={1}
+                value={form.quantity}
+                onChange={(e) => setForm((p) => ({ ...p, quantity: Math.max(1, Number(e.target.value) || 1) }))}
+              />
+            </div>
+          </>
+        ) : null}
 
         {error ? (
           <p className="request-form__error" data-testid="rf-error">

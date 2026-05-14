@@ -36,7 +36,15 @@ const STATUS_FILTERS: Array<{ id: RunStatus | 'all'; label: string }> = [
   { id: 'canceled', label: 'Canceled' },
 ];
 
-const WORKFLOWS = ['ad.post', 'email.design', 'popup.design'] as const;
+const WORKFLOWS = [
+  'social.post',
+  'blog.post',
+  'outreach.touch',
+  'respond.reply',
+  'ad.post',
+  'email.design',
+  'popup.design',
+] as const;
 type Workflow = (typeof WORKFLOWS)[number];
 
 const POLL_INTERVAL_MS = 10_000;

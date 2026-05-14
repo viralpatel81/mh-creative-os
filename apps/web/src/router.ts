@@ -14,7 +14,39 @@
 
 import { useEffect, useState } from 'react';
 
-export type WorkflowName = 'ad.post' | 'email.design' | 'popup.design';
+/**
+ * Workflow names the daemon will accept. Mirrors EngineWorkflow on
+ * the daemon side (apps/daemon/src/agentcy/types.ts) and
+ * WORKFLOW_NAMES in the engine (apps/engine/src/studio/runtime/src/
+ * domain/types.ts). Split into native vs mh2 by content — both groups
+ * navigate to the same /runs/new/:workflow route.
+ */
+export type NativeWorkflow =
+  | 'social.post'
+  | 'blog.post'
+  | 'outreach.touch'
+  | 'respond.reply';
+
+export type Mh2Workflow = 'ad.post' | 'email.design' | 'popup.design';
+
+export type WorkflowName = NativeWorkflow | Mh2Workflow;
+
+export const NATIVE_WORKFLOWS: readonly NativeWorkflow[] = [
+  'social.post',
+  'blog.post',
+  'outreach.touch',
+  'respond.reply',
+];
+export const MH2_WORKFLOWS: readonly Mh2Workflow[] = [
+  'ad.post',
+  'email.design',
+  'popup.design',
+];
+export const ALL_WORKFLOWS: readonly WorkflowName[] = [...NATIVE_WORKFLOWS, ...MH2_WORKFLOWS];
+
+export function isWorkflowName(value: string): value is WorkflowName {
+  return (ALL_WORKFLOWS as readonly string[]).includes(value);
+}
 
 export type Route =
   | { kind: 'home' }
@@ -44,7 +76,7 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'runs') {
     if (parts[1] === 'new' && parts[2]) {
       const workflow = decodeURIComponent(parts[2]);
-      if (workflow === 'ad.post' || workflow === 'email.design' || workflow === 'popup.design') {
+      if (isWorkflowName(workflow)) {
         const url = new URL(window.location.href);
         const brandId = url.searchParams.get('brand');
         return { kind: 'runs-new', workflow, brandId: brandId ?? null };

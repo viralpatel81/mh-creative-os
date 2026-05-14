@@ -205,23 +205,45 @@ export function BrandEditor({ brandId, fetcher }: BrandEditorProps): JSX.Element
 }
 
 function LaunchMenu({ brandId }: { brandId: string }): JSX.Element {
+  // Grouped into two rows: native agentcy workflows on top (social,
+  // blog, outreach, respond), mh2-imported creative workflows below
+  // (ad, email, popup). The ordering signals that agentcy is the
+  // platform and the mh2 imports are an extension layer.
+  const groups = [
+    {
+      label: 'Agentcy',
+      items: [
+        ['social.post', 'Social post'],
+        ['blog.post', 'Blog post'],
+        ['outreach.touch', 'Outreach touch'],
+        ['respond.reply', 'Respond / reply'],
+      ] as const,
+    },
+    {
+      label: 'Creative',
+      items: [
+        ['ad.post', 'Ad'],
+        ['email.design', 'Email'],
+        ['popup.design', 'Popup'],
+      ] as const,
+    },
+  ];
   return (
     <div className="brand-editor__launch" data-testid="brand-launch-menu">
-      {(
-        [
-          ['ad.post', 'Launch ad'],
-          ['email.design', 'Launch email'],
-          ['popup.design', 'Launch popup'],
-        ] as const
-      ).map(([workflow, label]) => (
-        <button
-          key={workflow}
-          type="button"
-          data-testid={`brand-launch-${workflow}`}
-          onClick={() => navigate({ kind: 'runs-new', workflow, brandId })}
-        >
-          {label}
-        </button>
+      {groups.map((group) => (
+        <div key={group.label} className="brand-editor__launch-group">
+          <span className="brand-editor__launch-label">{group.label}:</span>
+          {group.items.map(([workflow, label]) => (
+            <button
+              key={workflow}
+              type="button"
+              data-testid={`brand-launch-${workflow}`}
+              onClick={() => navigate({ kind: 'runs-new', workflow, brandId })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       ))}
     </div>
   );

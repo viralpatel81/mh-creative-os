@@ -42,12 +42,20 @@ import {
   setRunPid,
   type SqliteDb,
 } from './persistence.js'
-import type {
-  AgentcyEngineLocation,
-  AgentcyRunStatus,
-  AgentcyRuntimeEvent,
-  WorkflowRunRequest,
+import {
+  MH2_AGENTCY_WORKFLOWS,
+  NATIVE_AGENTCY_WORKFLOWS,
+  type AgentcyEngineLocation,
+  type AgentcyRunStatus,
+  type AgentcyRuntimeEvent,
+  type EngineWorkflow,
+  type WorkflowRunRequest,
 } from './types.js'
+
+const ALL_WORKFLOWS: ReadonlySet<EngineWorkflow> = new Set([
+  ...NATIVE_AGENTCY_WORKFLOWS,
+  ...MH2_AGENTCY_WORKFLOWS,
+])
 
 const ALL_STATUSES: readonly AgentcyRunStatus[] = [
   'queued',
@@ -94,11 +102,15 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
   const newRunId = opts.runIdGenerator ?? randomUUID
 
   function validateRequest(req: WorkflowRunRequest): void {
+    // mh2 workflows have closed v1 schemas. Native agentcy workflows
+    // (social.post, blog.post, outreach.touch, respond.reply) don't
+    // yet have schemas — pass them through unvalidated; the engine's
+    // CLI parser is permissive about --key value pairs.
+    if (!MH2_AGENTCY_WORKFLOWS.has(req.workflow)) return
     const payload = { brand_id: req.brand_id, ...req.params }
     if (req.workflow === 'ad.post') validateAdRequestV1(payload)
     else if (req.workflow === 'email.design') validateEmailRequestV1(payload)
     else if (req.workflow === 'popup.design') validatePopupRequestV1(payload)
-    else throw new ProtocolValidationError(`unknown workflow: ${req.workflow}`, '')
   }
 
   function fanOut(runId: string, payload: { seq?: number; kind: string; [k: string]: unknown }): void {
@@ -204,11 +216,7 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
       res.status(400).json({ error: 'body must be a WorkflowRunRequest object' })
       return
     }
-    if (
-      body.workflow !== 'ad.post' &&
-      body.workflow !== 'email.design' &&
-      body.workflow !== 'popup.design'
-    ) {
+    if (typeof body.workflow !== 'string' || !ALL_WORKFLOWS.has(body.workflow as EngineWorkflow)) {
       res.status(400).json({ error: 'invalid workflow' })
       return
     }

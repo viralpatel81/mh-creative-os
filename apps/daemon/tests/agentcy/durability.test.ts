@@ -22,7 +22,7 @@ function startApp(db: Database.Database, artifactsDir: string, isAlive?: (pid: n
     engine: {
       engineRoot: artifactsDir + '/..',
       artifactsDir,
-      cliCommand: '/bin/false',
+      cliCommand: '/usr/bin/false',
       cliBaseArgs: [],
     },
     db,

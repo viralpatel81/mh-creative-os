@@ -44,7 +44,7 @@ async function startApp(args: {
     engine: {
       engineRoot: args.engineRoot,
       artifactsDir: join(args.engineRoot, 'state', 'artifacts'),
-      cliCommand: '/bin/false',
+      cliCommand: '/usr/bin/false',
       cliBaseArgs: [],
     },
     db: args.db,

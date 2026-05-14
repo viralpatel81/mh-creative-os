@@ -189,7 +189,97 @@ describe('RequestForm — popup.design', () => {
   });
 });
 
-describe('BrandEditor launch glue (E3.3.g)', () => {
+describe('RequestForm — native agentcy workflows', () => {
+  it('shows topic / pillar / format inputs for social.post (no aspects)', async () => {
+    const { fetcher } = mockFetcher({
+      '/api/agentcy/brands': () =>
+        new Response(JSON.stringify(brandsList), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    });
+    render(<RequestForm workflow="social.post" prefilledBrandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('rf-topic'));
+    expect(screen.getByTestId('rf-pillar')).toBeTruthy();
+    expect(screen.getByTestId('rf-format')).toBeTruthy();
+    // No aspect/purpose/layout/engine/quantity rows on the native form.
+    expect(screen.queryByTestId('rf-aspect-1:1')).toBeNull();
+    expect(screen.queryByTestId('rf-purpose')).toBeNull();
+    expect(screen.queryByTestId('rf-layout-strategy')).toBeNull();
+    expect(screen.queryByTestId('rf-engine-gemini')).toBeNull();
+  });
+
+  it('POSTs only the native params (topic + pillar + format + brief_text)', async () => {
+    const { fetcher, calls } = mockFetcher({
+      '/api/agentcy/brands': () =>
+        new Response(JSON.stringify(brandsList), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      'POST /api/agentcy/runs/workflow': () =>
+        new Response(JSON.stringify({ runId: 'r_social' }), {
+          status: 202,
+          headers: { 'content-type': 'application/json' },
+        }),
+    });
+    render(<RequestForm workflow="social.post" prefilledBrandId="givecare" fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('rf-topic'));
+    fireEvent.change(screen.getByTestId('rf-topic'), { target: { value: 'caregiver gap' } });
+    fireEvent.change(screen.getByTestId('rf-pillar'), { target: { value: 'care-economy' } });
+    fireEvent.change(screen.getByTestId('rf-format'), { target: { value: 'infographic' } });
+    fireEvent.change(screen.getByTestId('rf-brief'), { target: { value: 'angle: $470B' } });
+    fireEvent.click(screen.getByTestId('rf-submit'));
+    await waitFor(() => window.location.pathname === '/runs/r_social');
+    const postCall = calls.find((c) => c.method === 'POST');
+    const body = postCall?.body as Record<string, unknown>;
+    expect(body.workflow).toBe('social.post');
+    expect(body.brand_id).toBe('givecare');
+    const params = body.params as Record<string, unknown>;
+    expect(params.topic).toBe('caregiver gap');
+    expect(params.pillar).toBe('care-economy');
+    expect(params.format).toBe('infographic');
+    expect(params.brief_text).toBe('angle: $470B');
+    // No mh2-specific params leak in.
+    expect(params.aspects).toBeUndefined();
+    expect(params.engine).toBeUndefined();
+    expect(params.layout_mode).toBeUndefined();
+    expect(params.purpose).toBeUndefined();
+  });
+
+  it('blog.post / outreach.touch / respond.reply all render the native form', async () => {
+    for (const wf of ['blog.post', 'outreach.touch', 'respond.reply'] as const) {
+      const { fetcher } = mockFetcher({
+        '/api/agentcy/brands': () =>
+          new Response(JSON.stringify(brandsList), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+      });
+      const { unmount } = render(
+        <RequestForm workflow={wf} prefilledBrandId="givecare" fetcher={fetcher} />,
+      );
+      await waitFor(() => screen.getByTestId('rf-topic'));
+      expect(screen.queryByTestId('rf-aspect-1:1')).toBeNull();
+      unmount();
+      cleanup();
+    }
+  });
+
+  it('blocks submit on missing brand even on the native form', async () => {
+    const { fetcher } = mockFetcher({
+      '/api/agentcy/brands': () =>
+        new Response(JSON.stringify(brandsList), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    });
+    render(<RequestForm workflow="social.post" prefilledBrandId={null} fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('rf-topic'));
+    expect((screen.getByTestId('rf-submit') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('BrandEditor launch glue (E3.3.g + .h)', () => {
   function getFetcher(): typeof fetch {
     return vi.fn(async () =>
       new Response(
@@ -203,9 +293,15 @@ describe('BrandEditor launch glue (E3.3.g)', () => {
     ) as unknown as typeof fetch;
   }
 
-  it('renders Launch ad / email / popup buttons once the brand has loaded', async () => {
+  it('renders Launch buttons for all seven workflows', async () => {
     render(<BrandEditor brandId="givecare" fetcher={getFetcher()} />);
     await waitFor(() => screen.getByTestId('brand-launch-menu'));
+    // Native agentcy workflows
+    expect(screen.getByTestId('brand-launch-social.post')).toBeTruthy();
+    expect(screen.getByTestId('brand-launch-blog.post')).toBeTruthy();
+    expect(screen.getByTestId('brand-launch-outreach.touch')).toBeTruthy();
+    expect(screen.getByTestId('brand-launch-respond.reply')).toBeTruthy();
+    // mh2-imported workflows
     expect(screen.getByTestId('brand-launch-ad.post')).toBeTruthy();
     expect(screen.getByTestId('brand-launch-email.design')).toBeTruthy();
     expect(screen.getByTestId('brand-launch-popup.design')).toBeTruthy();
@@ -216,6 +312,14 @@ describe('BrandEditor launch glue (E3.3.g)', () => {
     await waitFor(() => screen.getByTestId('brand-launch-ad.post'));
     fireEvent.click(screen.getByTestId('brand-launch-ad.post'));
     expect(window.location.pathname).toBe('/runs/new/ad.post');
+    expect(window.location.search).toBe('?brand=givecare');
+  });
+
+  it('Launch social post navigates to /runs/new/social.post?brand=:id', async () => {
+    render(<BrandEditor brandId="givecare" fetcher={getFetcher()} />);
+    await waitFor(() => screen.getByTestId('brand-launch-social.post'));
+    fireEvent.click(screen.getByTestId('brand-launch-social.post'));
+    expect(window.location.pathname).toBe('/runs/new/social.post');
     expect(window.location.search).toBe('?brand=givecare');
   });
 });

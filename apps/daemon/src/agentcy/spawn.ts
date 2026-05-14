@@ -27,11 +27,11 @@ import {
 } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-import type { AgentcyEngineLocation } from './types.js'
+import type { AgentcyEngineLocation, EngineWorkflow } from './types.js'
 
 export interface SpawnAgentcyInput {
   runId: string
-  workflow: 'ad.post' | 'email.design' | 'popup.design'
+  workflow: EngineWorkflow
   brandId: string
   params: Record<string, unknown>
   engine: AgentcyEngineLocation

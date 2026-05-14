@@ -28,6 +28,10 @@ async function startHarness(): Promise<Harness> {
   const artifactsDir = join(root, 'state', 'artifacts')
   mkdirSync(join(artifactsDir, 'run_smoke'), { recursive: true })
   writeFileSync(join(artifactsDir, 'run_smoke', 'ad.png'), Buffer.from('fake-png'))
+  // Real spawn cwd — needed so the spawn doesn't fail with ENOENT on
+  // the cwd before /bin/false has a chance to exit. (The native
+  // workflow tests below DO reach the spawn path.)
+  mkdirSync(join(root, 'src', 'studio', 'runtime'), { recursive: true })
 
   const db = new Database(':memory:')
   const app = express()
@@ -39,11 +43,14 @@ async function startHarness(): Promise<Harness> {
       // The /workflow tests reject before spawning; using a no-op
       // command keeps a hypothetical accidental spawn from running
       // anything dangerous.
-      cliCommand: '/bin/false',
+      cliCommand: '/usr/bin/false',
       cliBaseArgs: [],
     },
     db,
-    runIdGenerator: () => 'run_fixed',
+    runIdGenerator: (() => {
+      let n = 0
+      return () => `run_fixed_${++n}`
+    })(),
   })
 
   const server = await new Promise<ReturnType<Express['listen']>>((resolve) => {
@@ -161,5 +168,97 @@ describe('GET /api/agentcy/runs/:runId', () => {
   it('returns 404 for an unknown runId', async () => {
     const r = await fetch(`${h.baseUrl}/api/agentcy/runs/run_other`)
     expect(r.status).toBe(404)
+  })
+})
+
+describe('POST /api/agentcy/runs/workflow — native agentcy workflows', () => {
+  // The native workflows (social/blog/outreach/respond) don't have
+  // v1 request schemas; the daemon should accept them and pass any
+  // params through. We don't actually spawn the engine here — the
+  // harness uses cliCommand:'/usr/bin/false' so spawn exits 1 immediately,
+  // which means the run is recorded as failed but the request was
+  // accepted (202).
+  it('accepts social.post with topic + pillar params', async () => {
+    const r = await fetch(`${h.baseUrl}/api/agentcy/runs/workflow`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'social.post',
+        brand_id: 'givecare',
+        params: { topic: 'caregiver gap', pillar: 'care-economy', format: 'infographic' },
+      }),
+    })
+    expect(r.status).toBe(202)
+    const body = (await r.json()) as { runId: string; workflow: string }
+    expect(body.workflow).toBe('social.post')
+    expect(typeof body.runId).toBe('string')
+  })
+
+  it('accepts blog.post', async () => {
+    const r = await fetch(`${h.baseUrl}/api/agentcy/runs/workflow`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'blog.post',
+        brand_id: 'givecare',
+        params: { topic: 'policy reform' },
+      }),
+    })
+    expect(r.status).toBe(202)
+  })
+
+  it('accepts outreach.touch', async () => {
+    const r = await fetch(`${h.baseUrl}/api/agentcy/runs/workflow`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'outreach.touch',
+        brand_id: 'givecare',
+        params: {},
+      }),
+    })
+    expect(r.status).toBe(202)
+  })
+
+  it('accepts respond.reply', async () => {
+    const r = await fetch(`${h.baseUrl}/api/agentcy/runs/workflow`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'respond.reply',
+        brand_id: 'givecare',
+        params: {},
+      }),
+    })
+    expect(r.status).toBe(202)
+  })
+
+  it('still rejects truly unknown workflow names', async () => {
+    const r = await fetch(`${h.baseUrl}/api/agentcy/runs/workflow`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'nonsense.kind',
+        brand_id: 'givecare',
+        params: {},
+      }),
+    })
+    expect(r.status).toBe(400)
+  })
+
+  it('skips the strict ad/email/popup_request.v1 schema for native workflows', async () => {
+    // social.post has no 'aspects' field, but the daemon would reject
+    // an empty aspects array on ad.post. Confirm the validator gate
+    // truly skips for native flows.
+    const r = await fetch(`${h.baseUrl}/api/agentcy/runs/workflow`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'social.post',
+        brand_id: 'givecare',
+        params: { aspects: [] }, // would 400 on ad.post
+      }),
+    })
+    expect(r.status).toBe(202)
   })
 })

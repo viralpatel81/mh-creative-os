@@ -39,7 +39,7 @@ async function startHarness(): Promise<Harness> {
     engine: {
       engineRoot: root,
       artifactsDir: join(root, 'state', 'artifacts'),
-      cliCommand: '/bin/false',
+      cliCommand: '/usr/bin/false',
       cliBaseArgs: [],
     },
     db,
