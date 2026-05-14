@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brand_profile.v2.json",
+  "title": "BrandProfile",
+  "description": "Unified brand profile read from brands/<id>/brand.md (YAML frontmatter) + brands/<id>/design.md. Superset of agentcy's BrandProfile and mh2-creative-studio's BrandDna, intentionally permissive: every field except id/name is optional so agentcy and mh2 workflows can read what they need without one side requiring the other's schema.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+
+    "positioning": { "type": "string" },
+    "audiences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary"],
+        "properties": { "id": { "type": "string" }, "summary": { "type": "string" } }
+      }
+    },
+    "offers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary"],
+        "properties": {
+          "id": { "type": "string" },
+          "summary": { "type": "string" },
+          "url": { "type": "string" },
+          "cta": { "type": "string" }
+        }
+      }
+    },
+    "proof_points": { "type": "array", "items": { "type": "string" } },
+    "pillars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "perspective": { "type": "string" },
+          "signals": { "type": "array", "items": { "type": "string" } },
+          "format": { "type": "string" },
+          "frequency": { "type": "string" },
+          "default_format": { "type": "string" }
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "properties": {
+        "tone": { "type": "string" },
+        "style": { "type": "string" },
+        "do": { "type": "array", "items": { "type": "string" } },
+        "dont": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "channels": { "type": "object" },
+    "formats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string" }, "description": { "type": "string" } }
+      }
+    },
+
+    "url": { "type": "string" },
+    "description": { "type": "string" },
+    "category": { "type": "string" },
+    "brand_summary": { "type": "string" },
+    "colors": { "type": "array", "items": { "type": "string" } },
+    "fonts": { "type": "array", "items": { "type": "string" } },
+    "voice_adjectives": { "type": "array", "items": { "type": "string" } },
+    "target_audience": { "type": "string" },
+    "key_benefits": { "type": "array", "items": { "type": "string" } },
+    "usps": { "type": "array", "items": { "type": "string" } },
+    "features_and_benefits": { "type": "string" },
+    "brand_guidelines_analysis": { "type": "string" },
+
+    "photography_direction": {
+      "type": "object",
+      "properties": {
+        "lighting": { "type": "string" },
+        "color_grading": { "type": "string" },
+        "composition": { "type": "string" },
+        "subject_matter": { "type": "string" },
+        "props_and_surfaces": { "type": "string" },
+        "mood": { "type": "string" }
+      }
+    },
+    "packaging_details": {
+      "type": "object",
+      "properties": {
+        "physical_description": { "type": "string" },
+        "label_logo_placement": { "type": "string" },
+        "distinctive_features": { "type": "string" }
+      }
+    },
+    "ad_creative_style": {
+      "type": "object",
+      "properties": {
+        "typical_formats": { "type": "string" },
+        "text_overlay_style": { "type": "string" },
+        "photo_vs_illustration": { "type": "string" },
+        "ugc_usage": { "type": "string" },
+        "offer_presentation": { "type": "string" }
+      }
+    },
+    "prompt_modifier": { "type": "string" },
+    "background_colors": { "type": "array", "items": { "type": "string" } },
+    "cta_style": { "type": "string" },
+    "competitive_differentiation": { "type": "string" },
+    "guarantee": { "type": "string" },
+    "product_type": { "type": "string" },
+    "social_proof": { "type": "object" },
+
+    "personas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "age": { "type": "string" },
+          "description": { "type": "string" },
+          "pain_points": { "type": "array", "items": { "type": "string" } },
+          "motivations": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
