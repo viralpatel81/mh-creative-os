@@ -39,9 +39,17 @@ export interface RunDetails {
   runResult?: CanonicalRunResultV1
 }
 
+import { NoopSink, type RuntimeEventSink } from './events.js'
+
 interface RuntimeOptions {
   root?: string
   socialPublisher?: SocialPublisher
+  /**
+   * Sink that receives RuntimeEvent transitions during a run. Defaults to
+   * NoopSink. The daemon spawning agentcy injects a JSONL sink via the
+   * `--stream-events` CLI flag; see src/cli/ for that wiring.
+   */
+  eventSink?: RuntimeEventSink
 }
 
 function normalizeImportedBrief(
@@ -102,6 +110,7 @@ export class Runtime {
   private readonly db: DatabaseSync
   private readonly paths: RuntimePaths
   private socialPublisher: SocialPublisher
+  private readonly eventSink: RuntimeEventSink
 
   constructor(options: RuntimeOptions = {}) {
     this.root = options.root
@@ -110,6 +119,7 @@ export class Runtime {
     ensureRuntimePaths(this.paths)
     this.db = openRuntimeDb(this.paths.root)
     this.socialPublisher = options.socialPublisher ?? publishSocialPost
+    this.eventSink = options.eventSink ?? new NoopSink()
   }
 
   async runWorkflow(input: RunWorkflowInput): Promise<RunRecord> {
@@ -375,6 +385,8 @@ export class Runtime {
     const steps = WORKFLOWS[run.workflow]
 
     for (const step of steps.slice(startIndex)) {
+      const stepStartedAt = Date.now()
+      this.eventSink.emit({ kind: 'step.start', runId: run.id, step: step.name })
       try {
         const outputs = await step.run({
           brand,
@@ -391,8 +403,20 @@ export class Runtime {
 
         priorArtifacts = [...priorArtifacts, ...writtenArtifacts]
         this.updateRun(run.id, 'in_review', step.name)
+        this.eventSink.emit({
+          kind: 'step.end',
+          runId: run.id,
+          step: step.name,
+          durationMs: Date.now() - stepStartedAt,
+        })
       } catch (error) {
         this.updateRunFailure(run.id, step.name, error)
+        this.eventSink.emit({
+          kind: 'run.failed',
+          runId: run.id,
+          step: step.name,
+          error: error instanceof Error ? error.message : String(error),
+        })
         throw error
       }
     }
