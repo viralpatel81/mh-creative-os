@@ -170,6 +170,44 @@ export function listActiveRuns(db: SqliteDb): AgentcyRunRow[] {
   return rows.map(rowToRun)
 }
 
+export interface ListRunsFilter {
+  /** Restrict to runs with one of these statuses. */
+  statuses?: AgentcyRunStatus[] | undefined
+  /** Restrict to a specific workflow. */
+  workflow?: string | undefined
+  /** Restrict to a specific brand. */
+  brandId?: string | undefined
+  /** Max rows; defaults to 50 if not specified. */
+  limit?: number | undefined
+}
+
+export function listRuns(db: SqliteDb, filter: ListRunsFilter = {}): AgentcyRunRow[] {
+  const clauses: string[] = []
+  const args: Array<string | number> = []
+  if (filter.statuses && filter.statuses.length > 0) {
+    const placeholders = filter.statuses.map(() => '?').join(',')
+    clauses.push(`status IN (${placeholders})`)
+    for (const s of filter.statuses) args.push(s)
+  }
+  if (filter.workflow) {
+    clauses.push('workflow = ?')
+    args.push(filter.workflow)
+  }
+  if (filter.brandId) {
+    clauses.push('brand_id = ?')
+    args.push(filter.brandId)
+  }
+  const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : ''
+  // Newest first — dashboards almost always sort that way.
+  const limit = Math.max(1, Math.min(filter.limit ?? 50, 500))
+  const rows = db
+    .prepare(
+      `SELECT * FROM agentcy_runs ${where} ORDER BY started_at DESC LIMIT ?`,
+    )
+    .all(...args, limit) as Array<Record<string, unknown>>
+  return rows.map(rowToRun)
+}
+
 export function appendEvent(
   db: SqliteDb,
   runId: string,

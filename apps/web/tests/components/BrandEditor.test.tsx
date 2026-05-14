@@ -299,19 +299,39 @@ describe('BrandsQuickLink', () => {
     expect(window.location.pathname).toBe('/brands/givecare');
   });
 
-  it('renders nothing when the daemon returns no brands', async () => {
+  it('renders the Runs link even when no brands are returned', async () => {
     const fetcher = mockFetchJson(200, { brands: [] });
+    render(<BrandsQuickLink fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brands-quick-link'));
+    expect(screen.getByTestId('runs-link')).toBeTruthy();
+    expect(screen.queryByText(/^Brands:$/)).toBeNull();
+  });
+
+  it('Runs link navigates to /runs', async () => {
+    const fetcher = mockFetchJson(200, { brands: [] });
+    render(<BrandsQuickLink fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('runs-link'));
+    fireEvent.click(screen.getByTestId('runs-link'));
+    expect(window.location.pathname).toBe('/runs');
+  });
+
+  it('still renders nothing while the fetch is in flight (no flash)', async () => {
+    // A fetcher that never resolves — the component should not render
+    // anything before brands is set.
+    const fetcher = vi.fn(
+      () => new Promise<Response>(() => undefined),
+    ) as unknown as typeof fetch;
     const { container } = render(<BrandsQuickLink fetcher={fetcher} />);
     await new Promise((r) => setTimeout(r, 0));
     expect(container.querySelector('[data-testid="brands-quick-link"]')).toBeNull();
   });
 
-  it('renders nothing when the daemon errors', async () => {
+  it('renders the Runs link even when the daemon errors (brands set to [])', async () => {
     const fetcher = vi.fn(async () => {
       throw new Error('boom');
     }) as unknown as typeof fetch;
-    const { container } = render(<BrandsQuickLink fetcher={fetcher} />);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(container.querySelector('[data-testid="brands-quick-link"]')).toBeNull();
+    render(<BrandsQuickLink fetcher={fetcher} />);
+    await waitFor(() => screen.getByTestId('brands-quick-link'));
+    expect(screen.getByTestId('runs-link')).toBeTruthy();
   });
 });

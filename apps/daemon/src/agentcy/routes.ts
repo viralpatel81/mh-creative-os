@@ -34,6 +34,7 @@ import {
   getRun,
   insertRun,
   listActiveRuns,
+  listRuns,
   migrateAgentcy,
   recoverOrphanedRuns,
   replayEvents,
@@ -43,9 +44,18 @@ import {
 } from './persistence.js'
 import type {
   AgentcyEngineLocation,
+  AgentcyRunStatus,
   AgentcyRuntimeEvent,
   WorkflowRunRequest,
 } from './types.js'
+
+const ALL_STATUSES: readonly AgentcyRunStatus[] = [
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+  'canceled',
+] as const
 
 export interface RegisterAgentcyRoutesOptions {
   engine: AgentcyEngineLocation
@@ -280,6 +290,59 @@ export function registerAgentcyRoutes(app: Express, opts: RegisterAgentcyRoutesO
     })
 
     res.status(202).json({ runId, workflow: request.workflow, brandId: request.brand_id })
+  })
+
+  // GET /api/agentcy/runs — list runs for the dashboard.
+  //   ?status=running,failed   one or more statuses (comma-separated)
+  //   ?workflow=ad.post        restrict to one workflow
+  //   ?brand=givecare          restrict to one brand
+  //   ?limit=50                cap row count (1..500, default 50)
+  // Newest first by started_at.
+  app.get('/api/agentcy/runs', (req: Request, res: Response) => {
+    const q = req.query as Record<string, string | string[] | undefined>
+    const statusParam = typeof q.status === 'string' ? q.status : undefined
+    let statuses: AgentcyRunStatus[] | undefined
+    if (statusParam) {
+      const parsed = statusParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const bad = parsed.find((s) => !ALL_STATUSES.includes(s as AgentcyRunStatus))
+      if (bad) {
+        res.status(400).json({ error: `invalid status: ${bad}` })
+        return
+      }
+      statuses = parsed as AgentcyRunStatus[]
+    }
+    const workflow = typeof q.workflow === 'string' ? q.workflow : undefined
+    const brandId = typeof q.brand === 'string' ? q.brand : undefined
+    let limit: number | undefined
+    if (typeof q.limit === 'string') {
+      const n = Number(q.limit)
+      if (!Number.isFinite(n) || n <= 0) {
+        res.status(400).json({ error: 'limit must be a positive integer' })
+        return
+      }
+      limit = Math.floor(n)
+    }
+    const filter: import('./persistence.js').ListRunsFilter = {}
+    if (statuses) filter.statuses = statuses
+    if (workflow) filter.workflow = workflow
+    if (brandId) filter.brandId = brandId
+    if (limit) filter.limit = limit
+    const rows = listRuns(opts.db, filter)
+    res.json({
+      runs: rows.map((row) => ({
+        runId: row.runId,
+        workflow: row.workflow,
+        brandId: row.brandId,
+        status: row.status,
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+        exitCode: row.exitCode,
+        errorMessage: row.errorMessage,
+      })),
+    })
   })
 
   // GET /api/agentcy/runs/:runId — status snapshot.

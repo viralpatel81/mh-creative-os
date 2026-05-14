@@ -1,10 +1,10 @@
-// Quick-link strip that surfaces available brands from the daemon
-// (`GET /api/agentcy/brands`). Hidden when no brands are returned so
-// it stays invisible to operators who haven't seeded a brand yet.
-// Each chip deep-links to /brands/:id (the read-only BrandEditor,
-// Phase E3.3.b).
+// Quick-link strip that surfaces agentcy navigation hooks from the
+// home view: available brands (E3.3.b) + a Runs dashboard link
+// (E3.3.d). The Runs link is unconditional. Brands chips render only
+// when the daemon returned at least one brand so operators who haven't
+// seeded a brand yet still see the strip with just the Runs link.
 //
-// This is a NEW file — no Apache change-notice needed.
+// New file — no Apache change-notice needed.
 
 import { useEffect, useState } from 'react';
 
@@ -52,22 +52,34 @@ export function BrandsQuickLink({ fetcher }: BrandsQuickLinkProps): JSX.Element 
     };
   }, [fx]);
 
-  if (brands === null || brands.length === 0) return null;
+  if (brands === null) return null;
 
   return (
     <div className="brands-quick-link" data-testid="brands-quick-link">
-      <span className="brands-quick-link__label">Brands:</span>
-      {brands.map((b) => (
-        <button
-          key={b.id}
-          type="button"
-          className="brands-quick-link__chip"
-          data-testid={`brand-chip-${b.id}`}
-          onClick={() => navigate({ kind: 'brand', brandId: b.id })}
-        >
-          {b.name || b.id}
-        </button>
-      ))}
+      <button
+        type="button"
+        className="brands-quick-link__chip brands-quick-link__chip--primary"
+        data-testid="runs-link"
+        onClick={() => navigate({ kind: 'runs' })}
+      >
+        Runs →
+      </button>
+      {brands.length > 0 ? (
+        <>
+          <span className="brands-quick-link__label">Brands:</span>
+          {brands.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              className="brands-quick-link__chip"
+              data-testid={`brand-chip-${b.id}`}
+              onClick={() => navigate({ kind: 'brand', brandId: b.id })}
+            >
+              {b.name || b.id}
+            </button>
+          ))}
+        </>
+      ) : null}
     </div>
   );
 }

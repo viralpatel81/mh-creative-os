@@ -1,7 +1,8 @@
 // MODIFIED 2026-05-13 by mh-creative-os fork:
-// Added 'brand' Route kind (Phase E3.3.b) so the BrandEditor view at
-// /brands/:id is deep-linkable. parseRoute / buildPath learn the new
-// shape; navigate() is unchanged.
+// Added 'brand' Route kind (Phase E3.3.b) and 'runs' Route kind
+// (Phase E3.3.d) so /brands/:id and /runs are deep-linkable.
+// parseRoute / buildPath learn the new shapes; navigate() is
+// unchanged.
 // Upstream: nexu-io/open-design @ 7c8305f4
 
 // Tiny URL router. We avoid pulling in react-router for two reasons:
@@ -15,7 +16,8 @@ import { useEffect, useState } from 'react';
 export type Route =
   | { kind: 'home' }
   | { kind: 'project'; projectId: string; fileName: string | null }
-  | { kind: 'brand'; brandId: string };
+  | { kind: 'brand'; brandId: string }
+  | { kind: 'runs' };
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
@@ -34,11 +36,15 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'brands' && parts[1]) {
     return { kind: 'brand', brandId: decodeURIComponent(parts[1]) };
   }
+  if (parts[0] === 'runs') {
+    return { kind: 'runs' };
+  }
   return { kind: 'home' };
 }
 
 export function buildPath(route: Route): string {
   if (route.kind === 'home') return '/';
+  if (route.kind === 'runs') return '/runs';
   if (route.kind === 'brand') return `/brands/${encodeURIComponent(route.brandId)}`;
   const id = encodeURIComponent(route.projectId);
   if (route.fileName) {
