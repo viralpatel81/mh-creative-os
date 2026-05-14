@@ -28,8 +28,13 @@ def discover_brands() -> list[str]:
     brands = []
     for item in brands_dir.iterdir():
         if item.is_dir() and not item.name.startswith(("_", ".")):
-            # Check for brand.yml or <name>-brand.yml
-            if (item / "brand.yml").exists() or (item / f"{item.name}-brand.yml").exists():
+            # Discover brand.yml (legacy), <name>-brand.yml (legacy alternate),
+            # or brand.md (canonical via brand_loader).
+            if (
+                (item / "brand.yml").exists()
+                or (item / f"{item.name}-brand.yml").exists()
+                or (item / "brand.md").exists()
+            ):
                 brands.append(item.name)
 
     return sorted(brands)
@@ -49,19 +54,35 @@ def resolve_brand(name: str) -> Path | None:
 
 
 def load_brand_config(name: str) -> dict[str, Any]:
-    """Load the brand configuration YAML."""
+    """Load the brand configuration as a plain dict.
+
+    Resolution order:
+      1. brand.yml         (legacy agentcy format)
+      2. <name>-brand.yml  (legacy alternate)
+      3. brand.md          (canonical, via brand_loader package)
+
+    Returning a dict keeps `load_brand_profile` and other callers shape-
+    compatible regardless of source format.
+    """
     brand_dir = resolve_brand(name)
     if not brand_dir:
         raise ValueError(f"Brand not found: {name}")
 
-    # Try both naming conventions
     for filename in ["brand.yml", f"{name}-brand.yml"]:
         config_path = brand_dir / filename
         if config_path.exists():
             with open(config_path) as f:
                 return yaml.safe_load(f) or {}
 
-    raise ValueError(f"No brand.yml found for: {name}")
+    md_path = brand_dir / "brand.md"
+    if md_path.exists():
+        # Defer the import so the legacy brand.yml path doesn't pay the
+        # cost of loading brand_loader, and so cyclic imports stay impossible.
+        from brand_loader import load_brand_profile as load_md_profile
+
+        return load_md_profile(brand_dir)
+
+    raise ValueError(f"No brand.yml or brand.md found for: {name}")
 
 
 def load_brand_profile(name: str) -> BrandProfile:

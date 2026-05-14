@@ -16,7 +16,11 @@ dependencies = [
     "PyMuPDF>=1.24.0",
     "charset-normalizer>=3.0.0",
     "chardet>=5.0.0",
+    "brand-loader",
 ]
+
+[tool.uv.sources]
+brand-loader = { path = "../../packages/brand-loader/python", editable = true }
 
 [project.optional-dependencies]
 persona = [
