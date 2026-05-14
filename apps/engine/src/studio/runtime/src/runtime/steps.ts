@@ -11,6 +11,9 @@ import { generateExploreGrid } from '../generate/explore'
 import { generateSourceImage } from '../generate/image'
 import { generateText } from '../render/gemini'
 import type { RuntimePaths } from '../core/paths'
+import { runAdPipeline } from '../workflows/ad/pipeline.js'
+import { runEmailPipeline } from '../workflows/email/pipeline.js'
+import { runPopupPipeline } from '../workflows/popup/pipeline.js'
 
 export interface WorkflowContext {
   brand: BrandFoundation
@@ -56,14 +59,15 @@ export const WORKFLOWS: Record<WorkflowName, StepDefinition[]> = {
     { name: 'brief', run: buildBriefArtifacts },
     { name: 'draft', run: buildResponseDraftArtifacts },
   ],
-  // Phase C stubs — real pipelines land in Phase D (port mh2 services/*).
-  // Each stub emits a single placeholder artifact matching its
-  // run_result.v1.extensions schema so daemon integration in Phase E
-  // can exercise the SSE/artifact path before real generation logic
-  // ships.
-  'ad.post': [{ name: 'render', run: buildAdStubArtifacts }],
-  'email.design': [{ name: 'render', run: buildEmailStubArtifacts }],
-  'popup.design': [{ name: 'render', run: buildPopupStubArtifacts }],
+  // Phase D entry points — each workflow's single step delegates to a
+  // dedicated pipeline module under ../workflows/. The pipeline modules
+  // validate against the *_request.v1 schema (via @mh/protocols), load
+  // the brand profile (via @mh/brand-loader), and emit a schema-
+  // conforming *_output artifact. Phase D2 swaps the inner generation
+  // logic for the ported mh2 services without touching this registry.
+  'ad.post': [{ name: 'render', run: runAdPipeline }],
+  'email.design': [{ name: 'render', run: runEmailPipeline }],
+  'popup.design': [{ name: 'render', run: runPopupPipeline }],
 }
 
 /**
@@ -450,89 +454,6 @@ async function buildArticleDraftArtifacts(context: WorkflowContext): Promise<Ste
       data: {
         title,
         markdown: body,
-      },
-    },
-  ]
-}
-
-
-// ---------------------------------------------------------------------------
-// Phase C stubs for ad.post / email.design / popup.design.
-//
-// Each stub emits a single artifact with an `*_output` payload matching
-// the shape declared in packages/protocols/schemas/run_result.v1.extensions.json
-// so daemon-side parsing in Phase E can rely on the contract before the
-// real generation pipelines (Phase D — ported from mh2 services/) land.
-// ---------------------------------------------------------------------------
-
-function deriveAspects<T extends string>(input: Record<string, unknown>, fallback: T[]): T[] {
-  const raw = input.aspects
-  if (Array.isArray(raw) && raw.every((v) => typeof v === 'string')) {
-    return raw as T[]
-  }
-  return fallback
-}
-
-function deriveEngine(input: Record<string, unknown>): 'gemini' | 'openai' {
-  return input.engine === 'openai' ? 'openai' : 'gemini'
-}
-
-async function buildAdStubArtifacts(context: WorkflowContext): Promise<StepOutput[]> {
-  const aspects = deriveAspects<'1:1' | '3:4' | '9:16'>(context.input, ['1:1'])
-  const engine = deriveEngine(context.input)
-  return [
-    {
-      type: 'ad_output',
-      data: {
-        stub: true,
-        brand: context.brand.id,
-        images: aspects.map((aspect) => ({
-          aspect,
-          path: `state/artifacts/${context.runId}/stub-ad-${aspect.replace(':', 'x')}.png`,
-          engine,
-        })),
-      },
-    },
-  ]
-}
-
-async function buildEmailStubArtifacts(context: WorkflowContext): Promise<StepOutput[]> {
-  const aspects = deriveAspects<'2:3' | '3:4' | '9:16'>(context.input, ['3:4'])
-  const engine = deriveEngine(context.input)
-  const purpose = typeof context.input.purpose === 'string' ? context.input.purpose : 'custom'
-  return [
-    {
-      type: 'email_output',
-      data: {
-        stub: true,
-        brand: context.brand.id,
-        purpose,
-        images: aspects.map((aspect) => ({
-          aspect,
-          path: `state/artifacts/${context.runId}/stub-email-${aspect.replace(':', 'x')}.png`,
-          engine,
-        })),
-      },
-    },
-  ]
-}
-
-async function buildPopupStubArtifacts(context: WorkflowContext): Promise<StepOutput[]> {
-  const aspects = deriveAspects<'1:1' | '4:5' | '3:4'>(context.input, ['1:1'])
-  const engine = deriveEngine(context.input)
-  const purpose = typeof context.input.purpose === 'string' ? context.input.purpose : 'custom'
-  return [
-    {
-      type: 'popup_output',
-      data: {
-        stub: true,
-        brand: context.brand.id,
-        purpose,
-        images: aspects.map((aspect) => ({
-          aspect,
-          path: `state/artifacts/${context.runId}/stub-popup-${aspect.replace(':', 'x')}.png`,
-          engine,
-        })),
       },
     },
   ]

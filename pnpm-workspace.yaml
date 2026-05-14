@@ -3,5 +3,6 @@ packages:
   - packages/brand-loader/ts
   - packages/protocols/ts
   - apps/*
+  - apps/engine/src/studio/runtime
   - tools/*
   - e2e
